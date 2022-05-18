@@ -6,7 +6,7 @@ namespace R
 	namespace Rendering
 	{
 		GlobalRenderContext::GlobalRenderContext(const uint32_t width, const uint32_t height, const HWND windowHandle)
-            :m_width(width), m_height(height)
+            :m_width(width), m_height(height), m_frameIndex(0), m_frameNumber(0)
 		{
             UINT dxgiFactoryFlags = 0;
 
@@ -46,7 +46,7 @@ namespace R
 
             // Describe and create the swap chain.
             DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-            swapChainDesc.BufferCount = FrameCount;
+            swapChainDesc.BufferCount = FrameBuffersCount;
             swapChainDesc.Width = m_width;
             swapChainDesc.Height = m_height;
             swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -68,13 +68,13 @@ namespace R
             LogErrorIfFailed(factory->MakeWindowAssociation(windowHandle, DXGI_MWA_NO_ALT_ENTER));
 
             LogErrorIfFailed(swapChain.As(&m_swapChain));
-            m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
+            //m_frameIndex = m_swapChain->GetCurrentBackBufferIndex();
 
             // Create descriptor heaps.
             {
                 // Describe and create a render target view (RTV) descriptor heap.
                 D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-                rtvHeapDesc.NumDescriptors = FrameCount;
+                rtvHeapDesc.NumDescriptors = FrameBuffersCount;
                 rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
                 rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
                 LogErrorIfFailed(m_device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_rtvHeap)));
@@ -87,19 +87,22 @@ namespace R
                 CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart());
 
                 // Create a RTV for each frame.
-                for (UINT n = 0; n < FrameCount; n++)
+                for (UINT n = 0; n < FrameBuffersCount; n++)
                 {
                     LogErrorIfFailed(m_swapChain->GetBuffer(n, IID_PPV_ARGS(&m_renderTargets[n])));
                     m_device->CreateRenderTargetView(m_renderTargets[n].Get(), nullptr, rtvHandle);
                     rtvHandle.Offset(1, m_rtvDescriptorSize);
                 }
             }
+
+            // Create fence
+            LogErrorIfFailed(m_device->CreateFence(m_frameNumber, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
+            m_frameNumber++;
 		}
 
 		GlobalRenderContext::~GlobalRenderContext()
 		{
-            // TODO : Flush command queue before destroying
-            CloseHandle(m_fenceEvent);
+            
 		}
 
         void GlobalRenderContext::GetHardwareAdapter(IDXGIFactory1* pFactory, IDXGIAdapter1** ppAdapter, bool requestHighPerformanceAdapter)

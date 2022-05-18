@@ -4,6 +4,10 @@
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers.
 #endif
 
+#ifndef NOMINMAX
+#define NOMINMAX						// Exclude min max, use std::min, std::max.
+#endif
+
 #include <windows.h>
 
 // DX12
@@ -18,6 +22,7 @@
 
 // STD
 #include <cstdint>
+#include <fstream>
 #include <cassert>
 #include <algorithm>
 #include <string>

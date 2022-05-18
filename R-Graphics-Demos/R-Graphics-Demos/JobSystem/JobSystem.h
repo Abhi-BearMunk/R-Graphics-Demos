@@ -4,7 +4,7 @@ namespace R
 {
 	namespace Job
 	{
-		typedef void Entrypoint(void* param);
+		typedef void Entrypoint(void* param, uint32_t tid);
 		class JobSystem
 		{
 		public:
@@ -26,7 +26,7 @@ namespace R
 
 			struct JobCounter
 			{
-				std::atomic<int> counter;
+				std::atomic<int> counter = 0;
 				std::mutex cMutex;
 				std::condition_variable cv;
 			};
@@ -77,9 +77,9 @@ namespace R
 			std::vector<uint32_t>				m_threadJobs;
 #endif // _DEBUG
 			std::atomic<bool>					m_stopRunning = false;
-			void ProcessJobs(uint32_t i);
+			void ProcessJobs(uint32_t tid);
 			bool SharedJobsAvailable();
-			bool LockedJobsAvailable(uint32_t i);
+			bool LockedJobsAvailable(uint32_t tid);
 		};
 	}
 }

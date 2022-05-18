@@ -6,7 +6,7 @@ R::Job::JobSystem::JobSystem()
 	m_JobsWithThreadAffinity.resize(std::thread::hardware_concurrency());
 	for (uint32_t i = 0; i < std::thread::hardware_concurrency(); i++)
 	{
-		m_threadPool.push_back(std::thread(&JobSystem::ProcessJobs, this, i));
+		m_threadPool.emplace_back(std::thread(&JobSystem::ProcessJobs, this, i));
 #ifdef _DEBUG
 		m_threadJobs.push_back(0);
 #endif // _DEBUG
@@ -67,7 +67,7 @@ void R::Job::JobSystem::KickJobsWithAffinity(const JobDesc* aDesc, uint32_t nJob
 void R::Job::JobSystem::WaitForCounter(JobCounter* pCounter)
 {
 	std::unique_lock lk(pCounter->cMutex);
-	pCounter->cv.wait(lk, [&]{return pCounter->counter == 0; });
+	pCounter->cv.wait(lk, [&] {return pCounter->counter == 0; });
 }
 
 void R::Job::JobSystem::KickJobsWithPriorityAndWait(const JobDesc* aDesc, uint32_t nJobs)
@@ -84,19 +84,19 @@ void R::Job::JobSystem::KickJobsWithAffinityAndWait(const JobDesc* aDesc, uint32
 	WaitForCounter(aDesc[0].pCounter);
 }
 
-void R::Job::JobSystem::ProcessJobs(uint32_t i)
+void R::Job::JobSystem::ProcessJobs(uint32_t tid)
 {
 	JobDesc job;
 	while (!m_stopRunning)
 	{
 		{
 			std::unique_lock lock(m_qInUse);
-			m_wakeSleepingThread.wait(lock, [&] { return LockedJobsAvailable(i) || SharedJobsAvailable() || m_stopRunning; });
+			m_wakeSleepingThread.wait(lock, [&] { return LockedJobsAvailable(tid) || SharedJobsAvailable() || m_stopRunning; });
 			if (m_stopRunning)
 				return;
-			if (LockedJobsAvailable(i))
+			if (LockedJobsAvailable(tid))
 			{
-				job = m_JobsWithThreadAffinity[i].front();
+				job = m_JobsWithThreadAffinity[tid].front();
 				m_highPriorityJobs.pop();
 			}
 			else if (!m_highPriorityJobs.empty())
@@ -119,10 +119,11 @@ void R::Job::JobSystem::ProcessJobs(uint32_t i)
 		{
 			m_wakeSleepingThread.notify_one();
 		}
+
 		assert(job.jobFunc != nullptr);
-		job.jobFunc(job.param);
+		job.jobFunc(job.param, tid);
 #ifdef _DEBUG
-		m_threadJobs[i]++;
+		m_threadJobs[tid]++;
 #endif // _DEBUG
 		if (job.pCounter)
 		{
@@ -140,7 +141,7 @@ bool R::Job::JobSystem::SharedJobsAvailable()
 	return !m_highPriorityJobs.empty() || !m_medPriorityJobs.empty() || !m_lowPriorityJobs.empty();
 }
 
-bool R::Job::JobSystem::LockedJobsAvailable(uint32_t i)
+bool R::Job::JobSystem::LockedJobsAvailable(uint32_t tid)
 {
-	return !m_JobsWithThreadAffinity[i].empty();
+	return !m_JobsWithThreadAffinity[tid].empty();
 }

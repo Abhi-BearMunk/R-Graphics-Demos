@@ -71,6 +71,18 @@
     <ClInclude Include="Rendering\DX12Helper.h">
       <Filter>Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="Rendering\FrameResource.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\ReadData.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\DrawTrianglePass.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\Renderables.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="R-Graphics-Demos.cpp">
@@ -95,6 +107,12 @@
       <Filter>WinMain\Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Rendering\RenderSystem.cpp">
+      <Filter>Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\FrameResource.cpp">
+      <Filter>Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\DrawTrianglePass.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
   </ItemGroup>

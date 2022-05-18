@@ -156,13 +156,17 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="JobSystem\JobSystem.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Rendering\DrawTrianglePass.h" />
     <ClInclude Include="Rendering\DX12Helper.h" />
+    <ClInclude Include="Rendering\FrameResource.h" />
     <ClInclude Include="Rendering\GlobalRenderContext.h" />
+    <ClInclude Include="Rendering\Renderables.h" />
     <ClInclude Include="Rendering\RenderSystem.h" />
     <ClInclude Include="Rendering\ThreadRenderContext.h" />
     <ClInclude Include="Test\MoveSystem.h" />
     <ClInclude Include="Test\TestComponents.h" />
     <ClInclude Include="Utils\Logger.h" />
+    <ClInclude Include="Utils\ReadData.h" />
     <ClInclude Include="Utils\SimpleTimer.h" />
   </ItemGroup>
   <ItemGroup>
@@ -172,6 +176,8 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="R-Graphics-Demos.cpp" />
+    <ClCompile Include="Rendering\DrawTrianglePass.cpp" />
+    <ClCompile Include="Rendering\FrameResource.cpp" />
     <ClCompile Include="Rendering\GlobalRenderContext.cpp" />
     <ClCompile Include="Rendering\RenderSystem.cpp" />
     <ClCompile Include="Rendering\ThreadRenderContext.cpp" />

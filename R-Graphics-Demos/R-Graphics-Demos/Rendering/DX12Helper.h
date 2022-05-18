@@ -2,7 +2,7 @@
 #include "pch.h"
 #include "Utils/Logger.h"
 
-constexpr uint32_t FrameCount = 2;
+constexpr uint32_t FrameBuffersCount = 2;
 
 inline std::string HrToString(HRESULT hr)
 {

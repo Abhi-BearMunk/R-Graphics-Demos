@@ -4,7 +4,7 @@ namespace R
 {
 	namespace ECS
 	{
-		constexpr uint32_t MAX_ENTITIES_PER_COMPONENT_PER_ARCHETYPE = 1 << 20; // A little over a million
+		constexpr uint32_t MAX_ENTITIES_PER_ARCHETYPE = 1 << 24; // A little over 15 million
 		constexpr uint32_t MAX_COMPONENTS = 64;
 
 		struct Entity
@@ -25,15 +25,15 @@ namespace R
 		/// Wrapper for all things ECS
 		/// Stores Arrays for each component type (on the heap) by UID and signature
 		/// example:
-		/// struct1 = { ... data, uid = 0b1 }, struct2 = { ... data, uid = 0b10 }
-		/// Archetype1 = [struct1] (signature 0b1) , Archetype2 = [struct1, struct2] (signature 0b11)
+		/// component1 = { ... data, uid = 0b1 }, component2 = { ... data, uid = 0b10 }
+		/// Archetype1 = [component1] (signature 0b1) , Archetype2 = [component1, component2] (signature 0b11)
 		/// Now add 2 entities of Archetype1 and 3 of Archetype2
 		/// Generated table looks like this
 		/// ------------------------------------------------------------
 		/// ComponentID			  SOA					 SOA        .....
 		/// ------------------------------------------------------------
-		/// [0b1]		| { 0b1, struct1[2] }	| { 0b11, struct1[3]	|
-		/// [0b10]		| { 0b11, struct2[3] }	|						|
+		/// [0b1]		| { 0b1, component1[2] }	| { 0b11, component1[3]	|
+		/// [0b10]		| { 0b11, component2[3] }	|						|
 		///		...
 		/// </summary>
 		class World
@@ -51,26 +51,27 @@ namespace R
 			{
 				Cleanup();
 			}
-			template<typename... T>
+
+			template<typename... Components>
 			void RegisterArchetype()
 			{
-				uint64_t signature = GenerateSignature<T...>();
+				uint64_t signature = GenerateSignature<Components...>();
 				// Register Archetype should be called only once per component combination
 				assert(m_signatureCounts.find(signature) == m_signatureCounts.end());
 				m_signatureCounts[signature] = 0;
-				(InitializeComponentArrayForSignature<T>(signature), ...);
+				(InitializeComponentArrayForSignature<Components>(signature), ...);
 			}
 
-			template<typename... T>
-			Entity CreateEntity(const T&... t)
+			template<typename... Components>
+			Entity CreateEntity(const Components&... t)
 			{
-				uint64_t signature = GenerateSignature<T...>();
+				uint64_t signature = GenerateSignature<Components...>();
 				auto it = m_signatureCounts.find(signature);
 				// Archetype should already be registered
 				assert(it != m_signatureCounts.end());
 				uint32_t index = it->second;
 				// Add each component to the appropriate array
-				(SetComponentAtIndex<T>(signature, index, t), ...);
+				(SetComponentAtIndex<Components>(signature, index, t), ...);
 				// Increment count
 				it->second++;
 				return { signature, index };
@@ -82,28 +83,28 @@ namespace R
 
 			}
 
-			template<typename T>
-			T& GetComponent(const Entity& e)
+			template<typename Component>
+			Component& GetComponent(const Entity& e)
 			{
-				assert((e.signature & T::uid) != 0);
-				return reinterpret_cast<T*>(m_componentArrays[T::uid][e.signature].ptr)[e.index];
+				assert((e.signature & Component::uid) != 0);
+				return reinterpret_cast<Component*>(m_componentArrays[Component::uid][e.signature].ptr)[e.index];
 			}
 
-			template<typename... T>
-			void InterestedIn(std::vector<Interest<sizeof...(T)>>& interests)
+			template<typename... Components>
+			void InterestedIn(std::vector<Interest<sizeof...(Components)>>& interests)
 			{
 				assert(interests.size() == 0);
-				uint64_t signature = GenerateSignature<T...>();
-				uint32_t numComponents = sizeof...(T);
+				uint64_t signature = GenerateSignature<Components...>();
+				uint32_t numComponents = sizeof...(Components);
 				// TODO: Could be improved with a tree
 				for (auto& it : m_signatureCounts)
 				{
 					if ((it.first & signature) == signature)
 					{
-						interests.push_back(Interest<sizeof...(T)>());
+						interests.push_back(Interest<sizeof...(Components)>());
 						interests.back().entityCount = it.second;
 						int i = 0;
-						(InterestedInHelper<T>(interests.back().ppComps, i, it.first), ...);
+						(InterestedInHelper<Components>(interests.back().ppComps, i, it.first), ...);
 					}
 				}
 			}
@@ -133,7 +134,7 @@ namespace R
 			template<typename T>
 			void InitializeComponentArrayForSignature(uint64_t signature)
 			{
-				m_componentArrays[T::uid][signature] = { sizeof(T) , malloc(sizeof(T) * MAX_ENTITIES_PER_COMPONENT_PER_ARCHETYPE) };
+				m_componentArrays[T::uid][signature] = { sizeof(T) , malloc(sizeof(T) * MAX_ENTITIES_PER_ARCHETYPE) };
 			}
 
 			template<typename T>

@@ -27,10 +27,12 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
     auto e3 = world.CreateEntity<R::ECS::Pos, R::Test::Velocity, Health>({ 10.0f, -10.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 50 });
     auto e4 = world.CreateEntity<R::ECS::Pos, R::Test::Velocity, Health>({ 2.43f, -6.67f, 0.0f }, { -3.0f, 0.0f, 0.0f }, { 75 });
     auto e5 = world.CreateEntity<R::ECS::Pos, R::Test::Velocity>({ 1.0f, 1.0f, 0.0f }, { 10.0f, 0.0f, 0.0f });
-    for (int i = 0; i < 1000; i++)
+    for (int i = 0; i < R::ECS::MAX_ENTITIES_PER_ARCHETYPE / 2; i++)
     {
         R::ECS::Pos p;
         p.x = (float)(rand() % 10);
+        p.y = (float)(rand() % 10);
+        p.z = (float)(rand() % 10);
         auto e1 = world.CreateEntity<R::ECS::Pos, R::Test::Velocity, Health>(p, { 2.f, 0.f, 0.f }, { 100 });
     }
 
