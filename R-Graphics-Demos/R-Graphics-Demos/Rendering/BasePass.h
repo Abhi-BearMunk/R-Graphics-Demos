@@ -2,7 +2,7 @@
 #include "pch.h"
 #include "JobSystem/JobSystem.h"
 #include "Utils/ReadData.h"
-#include "GlobalRenderContext.h"
+#include "RenderContext.h"
 #include "ThreadRenderContext.h"
 #include "Renderables.h"
 #include "FrameResource.h"
@@ -13,17 +13,17 @@ namespace R
 		class BasePass
 		{
 		public:
-			BasePass(GlobalRenderContext* globalContext, ThreadRenderContext<FrameBuffersCount>* threadContextArr, Job::JobSystem* jobSystem);
+			BasePass(RenderContext* globalContext, Job::JobSystem* jobSystem);
 			~BasePass();
 			void Init(ID3D12GraphicsCommandList* cmdList);
-			void Update(FrameResource* frameResource, uint32_t frameIndex);
+			void Update(FrameResource* frameResource, const CD3DX12_CPU_DESCRIPTOR_HANDLE* rtvHandle);
 			void WaitForCompletion();
 		private:
 			void SetupRSAndPSO();
 			void SetupVertexBuffer(ID3D12GraphicsCommandList* cmdList);
 			struct JobData
 			{
-				GlobalRenderContext* globalRenderContext;
+				RenderContext* globalRenderContext;
 				ThreadRenderContext<FrameBuffersCount>* threadRenderContextArr;
 				FrameResource* frameResource;
 				uint32_t startIndex;
@@ -36,9 +36,7 @@ namespace R
 			Job::JobSystem::JobDesc*					m_jobDescs = new Job::JobSystem::JobDesc[ECS::MAX_ENTITIES_PER_ARCHETYPE];
 			static void JobFunc(void* param, uint32_t tid);
 
-			GlobalRenderContext*						m_pGlobalRenderContext;
-			ThreadRenderContext<FrameBuffersCount>*		m_pThreadRenderContextArray;
-
+			RenderContext*								m_pRenderContext;
 
 			ComPtr<ID3D12RootSignature>					m_rootSignature;
 			ComPtr<ID3D12PipelineState>					m_pipelineState;

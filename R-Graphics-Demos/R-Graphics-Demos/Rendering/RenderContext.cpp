@@ -1,12 +1,18 @@
 #include "pch.h"
-#include "GlobalRenderContext.h"
+#include "RenderContext.h"
 #include "GraphicsUtils.h"
 namespace R
 {
 	namespace Rendering
 	{
-		GlobalRenderContext::GlobalRenderContext(const uint32_t width, const uint32_t height, const HWND windowHandle)
-            :m_width(width), m_height(height), m_frameIndex(0), m_frameNumber(0), 
+		RenderContext::RenderContext(const uint32_t width, const uint32_t height, const HWND windowHandle, const uint32_t threadPoolSize)
+            :m_width(width), 
+            m_height(height), 
+            m_frameIndex(1), 
+            m_frameNumber(0), 
+            m_numWorkerThreads(threadPoolSize),
+            m_threadRenderContexts(reinterpret_cast<ThreadContext*>(operator new[](sizeof(ThreadContext)* threadPoolSize))),
+            m_threadCommandLists(new ID3D12GraphicsCommandList* [threadPoolSize]),
             m_viewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height)),
             m_scissorRect(0, 0, static_cast<LONG>(width), static_cast<LONG>(height))
 		{
@@ -20,9 +26,6 @@ namespace R
                 if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
                 {
                     debugController->EnableDebugLayer();
-
-                    // Enable additional debug layers.
-                    //dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
                 }
             }
             ComPtr<IDXGIInfoQueue> dxgiInfoQueue;
@@ -33,7 +36,7 @@ namespace R
                 dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, true);
                 dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, true);
             }
-#endif
+#endif //_DEBUG
 
             ComPtr<IDXGIFactory4> factory;
             LogErrorIfFailed(CreateDXGIFactory2(dxgiFactoryFlags, IID_PPV_ARGS(&factory)));
@@ -52,6 +55,7 @@ namespace R
             queueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
             LogErrorIfFailed(m_device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&m_commandQueue)));
+            m_commandQueue->SetName(L"Graphics Command Queue");
 
             // Describe and create the swap chain.
             DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
@@ -116,22 +120,36 @@ namespace R
             {
                 LogErrorIfFailed(HRESULT_FROM_WIN32(GetLastError()));
             }
+
+            // Create Thread Render constexts (Command lists and allocators)
+            for (size_t i = 0; i < threadPoolSize; i++)
+            {
+                new (&m_threadRenderContexts[i]) ThreadContext(m_device.Get(), L"ThreadContext_" + std::to_wstring(i));
+                LogErrorIfFailed(m_threadRenderContexts[i].GetCommandList()->Close());
+                m_threadCommandLists[i] = m_threadRenderContexts[i].GetCommandList();
+            }
 		}
 
-		GlobalRenderContext::~GlobalRenderContext()
+		RenderContext::~RenderContext()
 		{
             WaitForGPU();
             CloseHandle(m_eventHandle);
+            for (size_t i = 0; i < m_numWorkerThreads; i++)
+            {
+                m_threadRenderContexts[i].~ThreadRenderContext();
+            }
+            operator delete[](m_threadRenderContexts);
+
 #ifdef _DEBUG
             ComPtr<IDXGIDebug1> dxgiDebug;
             if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug))))
             {
                 dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_SUMMARY | DXGI_DEBUG_RLO_IGNORE_INTERNAL));
             }
-#endif
+#endif //_DEBUG
 		}
 
-        void GlobalRenderContext::WaitForGPU()
+        void RenderContext::WaitForGPU()
         {
             m_frameNumber++;
             LogErrorIfFailed(m_commandQueue->Signal(m_fence.Get(), m_frameNumber));
@@ -143,7 +161,7 @@ namespace R
             }
         }
 
-        void GlobalRenderContext::GetHardwareAdapter(IDXGIFactory1* pFactory, IDXGIAdapter1** ppAdapter, bool requestHighPerformanceAdapter)
+        void RenderContext::GetHardwareAdapter(IDXGIFactory1* pFactory, IDXGIAdapter1** ppAdapter, bool requestHighPerformanceAdapter)
         {
             *ppAdapter = nullptr;
 

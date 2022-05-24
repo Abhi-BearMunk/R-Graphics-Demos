@@ -5,6 +5,7 @@
 #include "ECS/World.h"
 #include "Test/MoveSystem.h"
 #include "Rendering/RenderSystem.h"
+#include "Rendering/RenderableManager.h"
 #include "Utils/Logger.h"
 #include "Utils/SimpleTimer.h"
 
@@ -15,6 +16,7 @@ struct Health
 };
 R::Test::MoveSystem* mv;
 R::Rendering::RenderSystem* rs;
+R::Rendering::RenderableManager* rm;
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
@@ -94,6 +96,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
     auto rendSys = R::Rendering::RenderSystem(1920, 1080, m_hwnd, world, jobSys);
     rs = &rendSys;
 
+    auto rendMan = R::Rendering::RenderableManager(world, jobSys);
+    rm = &rendMan;
+
     // Main sample loop.
     MSG msg = {};
     while (msg.message != WM_QUIT)
@@ -157,8 +162,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
             {
                 R_DEBUG_TIMER(RenderTimer);
                 rs->Render();
-                rs->Update(0.16f);
-                rs->WaitForUpdate();
+                rm->Update(rs->GetRenderContext());
+                rm->WaitForUpdate();
             }
         }
         return 0;

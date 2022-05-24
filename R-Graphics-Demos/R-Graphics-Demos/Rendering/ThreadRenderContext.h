@@ -1,7 +1,6 @@
 #pragma once
 #include "pch.h"
 #include "GraphicsUtils.h"
-#include "GlobalRenderContext.h"
 
 using Microsoft::WRL::ComPtr;
 namespace R

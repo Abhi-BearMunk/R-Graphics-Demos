@@ -50,7 +50,7 @@
     <ClInclude Include="Rendering\ThreadRenderContext.h">
       <Filter>Rendering</Filter>
     </ClInclude>
-    <ClInclude Include="Rendering\GlobalRenderContext.h">
+    <ClInclude Include="Rendering\RenderContext.h">
       <Filter>Rendering</Filter>
     </ClInclude>
     <ClInclude Include="Test\TestComponents.h">
@@ -86,6 +86,9 @@
     <ClInclude Include="Rendering\GraphicsUtils.h">
       <Filter>Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="Rendering\RenderableManager.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="R-Graphics-Demos.cpp">
@@ -94,7 +97,7 @@
     <ClCompile Include="JobSystem\JobSystem.cpp">
       <Filter>JobSystem</Filter>
     </ClCompile>
-    <ClCompile Include="Rendering\GlobalRenderContext.cpp">
+    <ClCompile Include="Rendering\RenderContext.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
     <ClCompile Include="Test\MoveSystem.cpp">
@@ -116,6 +119,9 @@
       <Filter>Rendering</Filter>
     </ClCompile>
     <ClCompile Include="Rendering\GraphicsUtils.cpp">
+      <Filter>Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\RenderableManager.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
   </ItemGroup>

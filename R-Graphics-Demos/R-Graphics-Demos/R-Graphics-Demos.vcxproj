@@ -160,11 +160,12 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="Rendering\BasePass.h" />
     <ClInclude Include="Rendering\FrameResource.h" />
-    <ClInclude Include="Rendering\GlobalRenderContext.h" />
+    <ClInclude Include="Rendering\RenderContext.h" />
     <ClInclude Include="Rendering\GraphicsUtils.h" />
     <ClInclude Include="Rendering\Renderables.h" />
     <ClInclude Include="Rendering\RenderSystem.h" />
     <ClInclude Include="Rendering\ThreadRenderContext.h" />
+    <ClInclude Include="Rendering\RenderableManager.h" />
     <ClInclude Include="Test\MoveSystem.h" />
     <ClInclude Include="Test\TestComponents.h" />
     <ClInclude Include="Utils\Logger.h" />
@@ -180,7 +181,8 @@
     <ClCompile Include="R-Graphics-Demos.cpp" />
     <ClCompile Include="Rendering\BasePass.cpp" />
     <ClCompile Include="Rendering\FrameResource.cpp" />
-    <ClCompile Include="Rendering\GlobalRenderContext.cpp" />
+    <ClCompile Include="Rendering\RenderableManager.cpp" />
+    <ClCompile Include="Rendering\RenderContext.cpp" />
     <ClCompile Include="Rendering\GraphicsUtils.cpp" />
     <ClCompile Include="Rendering\RenderSystem.cpp" />
     <ClCompile Include="Test\MoveSystem.cpp" />

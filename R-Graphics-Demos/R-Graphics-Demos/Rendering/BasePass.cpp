@@ -1,16 +1,16 @@
 #include "pch.h"
 #include "BasePass.h"
 
-R::Rendering::BasePass::BasePass(GlobalRenderContext* globalContext, ThreadRenderContext<FrameBuffersCount>* threadContextArr, Job::JobSystem* jobSystem)
-	:m_pGlobalRenderContext(globalContext), m_pThreadRenderContextArray(threadContextArr), m_pJobSystem(jobSystem)
+R::Rendering::BasePass::BasePass(RenderContext* globalContext, Job::JobSystem* jobSystem)
+	:m_pRenderContext(globalContext), m_pJobSystem(jobSystem)
 {
     for (int i = 0; i < ECS::MAX_ENTITIES_PER_ARCHETYPE; i++)
     {
         m_jobDescs[i].jobFunc = &BasePass::JobFunc;
         m_jobDescs[i].param = &m_jobDatas[i];
         m_jobDescs[i].pCounter = &m_jobCounter;
-        m_jobDatas[i].globalRenderContext = m_pGlobalRenderContext;
-        m_jobDatas[i].threadRenderContextArr = m_pThreadRenderContextArray;
+        m_jobDatas[i].globalRenderContext = m_pRenderContext;
+        m_jobDatas[i].threadRenderContextArr = m_pRenderContext->GetThreadContext(0);
     }
 }
 
@@ -26,15 +26,14 @@ void R::Rendering::BasePass::Init(ID3D12GraphicsCommandList* cmdList)
     SetupVertexBuffer(cmdList);
 }
 
-void R::Rendering::BasePass::Update(FrameResource* frameResource, uint32_t frameIndex)
+void R::Rendering::BasePass::Update(FrameResource* frameResource, const CD3DX12_CPU_DESCRIPTOR_HANDLE* rtvHandle)
 {
     for (size_t i = 0; i < m_pJobSystem->GetNumWorkers(); i++)
     {
-        auto commandList = m_pThreadRenderContextArray[i].GetCommandList();
+        auto commandList = m_pRenderContext->GetThreadContext(i)->GetCommandList();
         commandList->SetPipelineState(m_pipelineState.Get());
         commandList->SetGraphicsRootSignature(m_rootSignature.Get());
-        CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_pGlobalRenderContext->GetRTVHeap()->GetCPUDescriptorHandleForHeapStart(), frameIndex, m_pGlobalRenderContext->GetRTVDescriptoSize());
-        commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+        commandList->OMSetRenderTargets(1, rtvHandle, FALSE, nullptr);
 
         // Record commands.
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -86,7 +85,7 @@ void R::Rendering::BasePass::SetupRSAndPSO()
         }
     }
 
-    LogErrorIfFailed(m_pGlobalRenderContext->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
+    LogErrorIfFailed(m_pRenderContext->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
             IID_PPV_ARGS(m_rootSignature.ReleaseAndGetAddressOf())));
 
     // PSO
@@ -116,7 +115,7 @@ void R::Rendering::BasePass::SetupRSAndPSO()
     psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
     psoDesc.SampleDesc.Count = 1;
     LogErrorIfFailed(
-        m_pGlobalRenderContext->GetDevice()->CreateGraphicsPipelineState(&psoDesc,
+        m_pRenderContext->GetDevice()->CreateGraphicsPipelineState(&psoDesc,
             IID_PPV_ARGS(m_pipelineState.ReleaseAndGetAddressOf())));
 }
 
@@ -134,14 +133,14 @@ void R::Rendering::BasePass::SetupVertexBuffer(ID3D12GraphicsCommandList* cmdLis
         // Define the geometry for a triangle.
         Vertex triangleVertices[] =
         {
-            { { 0.0f, 0.009f * m_pGlobalRenderContext->GetAspectRatio(), 0.0f , 1.0f}, { 0.5f, 0.0f, 0.0f, 0.0f } },
-            { { 0.009f, -0.009f * m_pGlobalRenderContext->GetAspectRatio(), 0.0f, 1.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },
-            { { -0.009f, -0.009f * m_pGlobalRenderContext->GetAspectRatio(), 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } }
+            { { 0.0f, 0.009f * m_pRenderContext->GetAspectRatio(), 0.0f , 1.0f}, { 0.5f, 0.0f, 0.0f, 0.0f } },
+            { { 0.009f, -0.009f * m_pRenderContext->GetAspectRatio(), 0.0f, 1.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },
+            { { -0.009f, -0.009f * m_pRenderContext->GetAspectRatio(), 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } }
         };
 
         const UINT vertexBufferSize = sizeof(triangleVertices);
 
-        CommandCreateBufferFromData(m_pGlobalRenderContext->GetDevice(),
+        CommandCreateBufferFromData(m_pRenderContext->GetDevice(),
             cmdList,
             m_vertexBuffer.ReleaseAndGetAddressOf(),
             m_vertexUploadBuffer.ReleaseAndGetAddressOf(),
