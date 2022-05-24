@@ -39,7 +39,14 @@ namespace R
 				JobPriorityOrAffinity priorityOrAffinity = { JobPriority::P_MEDIUM };
 			};
 
+			/// <summary>
+			/// NOTE : This assumes all the jobs share the same counter.
+			/// Kick a bunch of jobs
+			/// </summary>
+			/// <param name="aDesc"> an array of jobs </param>
+			/// <param name="nJobs"> num jobs </param>
 			void KickJobsWithPriority(const JobDesc* aDesc, uint32_t nJobs);
+
 			/// <summary>
 			/// Kick jobs which are locked to threads
 			/// For max efficiency kick atleast one job for each thread
@@ -47,7 +54,13 @@ namespace R
 			/// <param name="aDesc"> an array of jobs </param>
 			/// <param name="nJobs"> num jobs </param>
 			void KickJobsWithAffinity(const JobDesc* aDesc, uint32_t nJobs);
+
+			/// <summary>
+			/// Wait for a given counter to become '0'
+			/// </summary>
+			/// <param name="pCounter"></param>
 			void WaitForCounter(JobCounter* pCounter);
+
 			/// <summary>
 			/// NOTE : This assumes all the jobs share the same counter.
 			/// Should only be called from main thread.
@@ -57,6 +70,7 @@ namespace R
 			/// <param name="aDesc"> an array of jobs </param>
 			/// <param name="nJobs"> num jobs </param>
 			void KickJobsWithPriorityAndWait(const JobDesc* aDesc, uint32_t nJobs);
+
 			/// <summary>
 			/// Check desc of KickJobsWithAffinity(...) and KickJobsWithPriorityAndWait(...)
 			/// </summary>
@@ -64,6 +78,7 @@ namespace R
 			/// <param name="nJobs"></param>
 			/// <param name="nJobs"> num jobs </param>
 			void KickJobsWithAffinityAndWait(const JobDesc* aDesc, uint32_t nJobs);
+
 			inline size_t GetNumWorkers() { return m_threadPool.size(); }
 		private:
 			std::queue<JobDesc>					m_highPriorityJobs;

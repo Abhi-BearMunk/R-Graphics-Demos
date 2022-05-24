@@ -126,7 +126,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <DelayLoadDLLs>d3d12.dll</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -147,7 +148,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>d3d12.lib;dxgi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <DelayLoadDLLs>d3d12.dll</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -156,10 +158,10 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="JobSystem\JobSystem.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="Rendering\DrawTrianglePass.h" />
-    <ClInclude Include="Rendering\DX12Helper.h" />
+    <ClInclude Include="Rendering\BasePass.h" />
     <ClInclude Include="Rendering\FrameResource.h" />
     <ClInclude Include="Rendering\GlobalRenderContext.h" />
+    <ClInclude Include="Rendering\GraphicsUtils.h" />
     <ClInclude Include="Rendering\Renderables.h" />
     <ClInclude Include="Rendering\RenderSystem.h" />
     <ClInclude Include="Rendering\ThreadRenderContext.h" />
@@ -176,13 +178,31 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="R-Graphics-Demos.cpp" />
-    <ClCompile Include="Rendering\DrawTrianglePass.cpp" />
+    <ClCompile Include="Rendering\BasePass.cpp" />
     <ClCompile Include="Rendering\FrameResource.cpp" />
     <ClCompile Include="Rendering\GlobalRenderContext.cpp" />
+    <ClCompile Include="Rendering\GraphicsUtils.cpp" />
     <ClCompile Include="Rendering\RenderSystem.cpp" />
-    <ClCompile Include="Rendering\ThreadRenderContext.cpp" />
     <ClCompile Include="Test\MoveSystem.cpp" />
     <ClCompile Include="Utils\Logger.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Rendering\Shaders\BasicPix.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.5</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.5</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Rendering\Shaders\BasicVert.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.5</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.5</ShaderModel>
+    </FxCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

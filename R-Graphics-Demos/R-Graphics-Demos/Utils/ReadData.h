@@ -16,13 +16,13 @@ namespace R
 
             wchar_t moduleName[_MAX_PATH];
             if (!GetModuleFileNameW(nullptr, moduleName, _MAX_PATH))
-                R_LOG_ERROR("GetModuleFileName {}", moduleName);
+                R_LOG_ERROR(L"GetModuleFileName {}", moduleName);
 
             if (_wsplitpath_s(moduleName, drive, _MAX_DRIVE, path, _MAX_PATH, nullptr, 0, nullptr, 0))
-                R_LOG_ERROR("_wsplitpath_s {}", moduleName);
+                R_LOG_ERROR(L"_wsplitpath_s {}", moduleName);
 
             if (_wmakepath_s(fullPath, _MAX_PATH, drive, path, relativePath, nullptr))
-                R_LOG_ERROR("_wmakepath_s {} / {}", drive, path);
+                R_LOG_ERROR(L"_wmakepath_s {} / {}", moduleName);
 #else
             * fullPath = *relativePath;
 #endif
@@ -43,22 +43,22 @@ namespace R
 #endif
 
             if (!inFile)
-                R_LOG_ERROR("ReadData {}", name);
+                R_LOG_ERROR(L"ReadData {}", name);
 
             std::streampos len = inFile.tellg();
             if (!inFile)
-                R_LOG_ERROR("ReadData {}", name);
+                R_LOG_ERROR(L"ReadData {}", name);
 
             std::vector<uint8_t> blob;
             blob.resize(size_t(len));
 
             inFile.seekg(0, std::ios::beg);
             if (!inFile)
-                R_LOG_ERROR("ReadData {}", name);
+                R_LOG_ERROR(L"ReadData {}", name);
 
             inFile.read(reinterpret_cast<char*>(blob.data()), len);
             if (!inFile)
-                R_LOG_ERROR("ReadData {}", name);
+                R_LOG_ERROR(L"ReadData {}", name);
 
             inFile.close();
 

@@ -1,6 +1,6 @@
 #pragma once
 #include "pch.h"
-#include "DX12Helper.h"
+#include "GraphicsUtils.h"
 #include "ECS/World.h"
 #include "ECS/PredefinedComponents.h"
 #include "Renderables.h"
@@ -21,10 +21,10 @@ namespace R
 			};
 			FrameResource();
 			~FrameResource();
-			void Submit(ID3D12CommandQueue* cmdQ, ID3D12Fence* fence, uint64_t& frameNumber);
+			void Submit(ID3D12CommandQueue* cmdQ, ID3D12Fence* fence, uint64_t* frameNumber);
 			void Release(ID3D12Fence* fence);
 
-			inline Renderable * const GetRenderable(uint32_t index) { assert(index < ECS::MAX_ENTITIES_PER_ARCHETYPE); return &m_renderables[index]; }
+			inline Renderable* const GetRenderable(uint32_t index) { assert(index < ECS::MAX_ENTITIES_PER_ARCHETYPE); return &m_renderables[index]; }
 			inline FrameResourceState GetState() const { return m_state; }
 			inline void SetCount(const uint32_t& count) { m_count = count; }
 			inline uint32_t GetCount() { return m_count; }

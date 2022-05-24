@@ -17,7 +17,7 @@ namespace R
 }
 
 #ifdef _DEBUG
-#define R_TIMER(x) R::Utils::SimpleTimer _##x(#x)
+#define R_DEBUG_TIMER(x) R::Utils::SimpleTimer _##x(#x)
 #else
-#define R_TIMER(x)
+#define R_DEBUG_TIMER(x)
 #endif // _DEBUG

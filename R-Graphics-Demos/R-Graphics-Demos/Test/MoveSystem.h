@@ -1,4 +1,5 @@
 #pragma once
+#include "pch.h"
 #include "ECS/PredefinedComponents.h"
 #include "Test/TestComponents.h"
 #include "ECS/World.h"
@@ -11,6 +12,7 @@ namespace R
 		{
 		public:
 			MoveSystem(ECS::World& world, Job::JobSystem& jobSystem);
+			~MoveSystem();
 			void Update(const float& dt);
 			void WaitForCompletion();
 		private:

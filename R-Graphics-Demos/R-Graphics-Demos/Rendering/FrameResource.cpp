@@ -16,9 +16,9 @@ R::Rendering::FrameResource::~FrameResource()
 	CloseHandle(m_eventHandle);
 }
 
-void R::Rendering::FrameResource::Submit(ID3D12CommandQueue* cmdQ, ID3D12Fence* fence, uint64_t& frameNumber)
+void R::Rendering::FrameResource::Submit(ID3D12CommandQueue* cmdQ, ID3D12Fence* fence, uint64_t* frameNumber)
 {
-	m_fenceValue = ++frameNumber;
+	m_fenceValue = ++(*frameNumber);
 	LogErrorIfFailed(cmdQ->Signal(fence, m_fenceValue));
 	m_state = FrameResourceState::e_inUse;
 }

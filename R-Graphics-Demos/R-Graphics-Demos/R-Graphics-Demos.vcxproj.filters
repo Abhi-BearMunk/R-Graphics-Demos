@@ -30,6 +30,9 @@
     <Filter Include="Utils">
       <UniqueIdentifier>{df837731-25cb-430d-a4d7-02380f084220}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Rendering\Shaders">
+      <UniqueIdentifier>{8d57833b-9cec-45da-bdd6-294a9f6e036a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -68,19 +71,19 @@
     <ClInclude Include="pch.h">
       <Filter>WinMain\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Rendering\DX12Helper.h">
-      <Filter>Rendering</Filter>
-    </ClInclude>
     <ClInclude Include="Rendering\FrameResource.h">
       <Filter>Rendering</Filter>
     </ClInclude>
     <ClInclude Include="Utils\ReadData.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="Rendering\DrawTrianglePass.h">
+    <ClInclude Include="Rendering\BasePass.h">
       <Filter>Rendering</Filter>
     </ClInclude>
     <ClInclude Include="Rendering\Renderables.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\GraphicsUtils.h">
       <Filter>Rendering</Filter>
     </ClInclude>
   </ItemGroup>
@@ -90,9 +93,6 @@
     </ClCompile>
     <ClCompile Include="JobSystem\JobSystem.cpp">
       <Filter>JobSystem</Filter>
-    </ClCompile>
-    <ClCompile Include="Rendering\ThreadRenderContext.cpp">
-      <Filter>Rendering</Filter>
     </ClCompile>
     <ClCompile Include="Rendering\GlobalRenderContext.cpp">
       <Filter>Rendering</Filter>
@@ -112,8 +112,19 @@
     <ClCompile Include="Rendering\FrameResource.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="Rendering\DrawTrianglePass.cpp">
+    <ClCompile Include="Rendering\BasePass.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="Rendering\GraphicsUtils.cpp">
+      <Filter>Rendering</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Rendering\Shaders\BasicVert.hlsl">
+      <Filter>Rendering\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Rendering\Shaders\BasicPix.hlsl">
+      <Filter>Rendering\Shaders</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

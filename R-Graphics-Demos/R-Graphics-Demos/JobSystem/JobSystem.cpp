@@ -67,7 +67,10 @@ void R::Job::JobSystem::KickJobsWithAffinity(const JobDesc* aDesc, uint32_t nJob
 void R::Job::JobSystem::WaitForCounter(JobCounter* pCounter)
 {
 	std::unique_lock lk(pCounter->cMutex);
-	pCounter->cv.wait(lk, [&] {return pCounter->counter == 0; });
+	if (pCounter->counter > 0)
+	{
+		pCounter->cv.wait(lk, [&] { return pCounter->counter <= 0; });
+	}
 }
 
 void R::Job::JobSystem::KickJobsWithPriorityAndWait(const JobDesc* aDesc, uint32_t nJobs)
@@ -127,7 +130,10 @@ void R::Job::JobSystem::ProcessJobs(uint32_t tid)
 #endif // _DEBUG
 		if (job.pCounter)
 		{
-			job.pCounter->counter--;
+			{
+				std::lock_guard<std::mutex> lk(job.pCounter->cMutex);
+				job.pCounter->counter--;
+			}
 			if (job.pCounter->counter == 0)
 			{
 				job.pCounter->cv.notify_all();

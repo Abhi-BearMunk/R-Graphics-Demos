@@ -10,7 +10,7 @@ R::Utils::Logger::Logger()
 	auto const time = std::chrono::current_zone()->to_local(std::chrono::system_clock::now());
 	std::string fName = "Logs/" + std::format("{:%Y-%m-%d-%X}", time) + ".txt";
 	std::replace(fName.begin(), fName.end(), ':', '-');
-	file_logger = spdlog::basic_logger_st("file_logger", fName);
+	file_logger = spdlog::basic_logger_mt("file_logger", fName);
 #ifdef _DEBUG
 	file_logger->set_level(spdlog::level::debug);
 #else

@@ -15,8 +15,15 @@
 #include <dxgi1_6.h>
 #include <DirectXMath.h>
 #include "d3dx12.h"
+#ifdef _DEBUG
+#include <dxgidebug.h>
+#endif // DEBUG
+
 
 // SpdLog
+#ifndef SPDLOG_WCHAR_TO_UTF8_SUPPORT
+#define SPDLOG_WCHAR_TO_UTF8_SUPPORT
+#endif
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/basic_file_sink.h>
 
@@ -24,6 +31,7 @@
 #include <cstdint>
 #include <fstream>
 #include <cassert>
+#include <type_traits>
 #include <algorithm>
 #include <string>
 #include <format>

@@ -1,12 +1,14 @@
 #include "pch.h"
 #include "GlobalRenderContext.h"
-#include "DX12Helper.h"
+#include "GraphicsUtils.h"
 namespace R
 {
 	namespace Rendering
 	{
 		GlobalRenderContext::GlobalRenderContext(const uint32_t width, const uint32_t height, const HWND windowHandle)
-            :m_width(width), m_height(height), m_frameIndex(0), m_frameNumber(0)
+            :m_width(width), m_height(height), m_frameIndex(0), m_frameNumber(0), 
+            m_viewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height)),
+            m_scissorRect(0, 0, static_cast<LONG>(width), static_cast<LONG>(height))
 		{
             UINT dxgiFactoryFlags = 0;
 
@@ -20,8 +22,16 @@ namespace R
                     debugController->EnableDebugLayer();
 
                     // Enable additional debug layers.
-                    dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
+                    //dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
                 }
+            }
+            ComPtr<IDXGIInfoQueue> dxgiInfoQueue;
+            if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(dxgiInfoQueue.GetAddressOf()))))
+            {
+                dxgiFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
+
+                dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, true);
+                dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, true);
             }
 #endif
 
@@ -36,7 +46,6 @@ namespace R
                 D3D_FEATURE_LEVEL_11_0,
                 IID_PPV_ARGS(&m_device)
             ));
-
             // Describe and create the command queue.
             D3D12_COMMAND_QUEUE_DESC queueDesc = {};
             queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
@@ -87,7 +96,7 @@ namespace R
                 CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart());
 
                 // Create a RTV for each frame.
-                for (UINT n = 0; n < FrameBuffersCount; n++)
+                for (uint32_t n = 0; n < FrameBuffersCount; n++)
                 {
                     LogErrorIfFailed(m_swapChain->GetBuffer(n, IID_PPV_ARGS(&m_renderTargets[n])));
                     m_device->CreateRenderTargetView(m_renderTargets[n].Get(), nullptr, rtvHandle);
@@ -95,15 +104,44 @@ namespace R
                 }
             }
 
+            // Set Window related stuff
+            m_aspectRatio = static_cast<float>(m_width) / static_cast<float>(m_height);
+
             // Create fence
             LogErrorIfFailed(m_device->CreateFence(m_frameNumber, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&m_fence)));
             m_frameNumber++;
+
+            m_eventHandle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+            if (m_eventHandle == nullptr)
+            {
+                LogErrorIfFailed(HRESULT_FROM_WIN32(GetLastError()));
+            }
 		}
 
 		GlobalRenderContext::~GlobalRenderContext()
 		{
-            
+            WaitForGPU();
+            CloseHandle(m_eventHandle);
+#ifdef _DEBUG
+            ComPtr<IDXGIDebug1> dxgiDebug;
+            if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug))))
+            {
+                dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_SUMMARY | DXGI_DEBUG_RLO_IGNORE_INTERNAL));
+            }
+#endif
 		}
+
+        void GlobalRenderContext::WaitForGPU()
+        {
+            m_frameNumber++;
+            LogErrorIfFailed(m_commandQueue->Signal(m_fence.Get(), m_frameNumber));
+            // Signal And Wait
+            if (m_fence->GetCompletedValue() < m_frameNumber)
+            {
+                LogErrorIfFailed(m_fence->SetEventOnCompletion(m_frameNumber, m_eventHandle));
+                WaitForSingleObjectEx(m_eventHandle, INFINITE, FALSE);
+            }
+        }
 
         void GlobalRenderContext::GetHardwareAdapter(IDXGIFactory1* pFactory, IDXGIAdapter1** ppAdapter, bool requestHighPerformanceAdapter)
         {
