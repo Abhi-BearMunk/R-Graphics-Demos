@@ -1,15 +1,15 @@
 #include "pch.h"
 #include "BasePass.h"
 
-R::Rendering::BasePass::BasePass(RenderContext* globalContext, Job::JobSystem* jobSystem)
-	:m_pRenderContext(globalContext), m_pJobSystem(jobSystem)
+R::Rendering::BasePass::BasePass(Job::JobSystem* jobSystem)
+	:m_pJobSystem(jobSystem)
 {
     for (int i = 0; i < ECS::MAX_ENTITIES_PER_ARCHETYPE; i++)
     {
         m_jobDescs[i].jobFunc = &BasePass::JobFunc;
         m_jobDescs[i].param = &m_jobDatas[i];
         m_jobDescs[i].pCounter = &m_jobCounter;
-        m_jobDatas[i].basePass = this;
+        m_jobDatas[i].constData = &m_jobConstData;
     }
 }
 
@@ -20,20 +20,22 @@ R::Rendering::BasePass::~BasePass()
     delete[] m_jobDatas;
 }
 
-void R::Rendering::BasePass::Init(ID3D12GraphicsCommandList* cmdList)
+void R::Rendering::BasePass::Init(RenderContext* renderContext, ID3D12GraphicsCommandList* cmdList)
 {
-    SetupRSAndPSO();
-    SetupVertexBuffer(cmdList);
+    SetupRSAndPSO(renderContext);
+    SetupVertexBuffer(renderContext, cmdList);
 }
 
-void R::Rendering::BasePass::Update(FrameResource* frameResource, const CD3DX12_CPU_DESCRIPTOR_HANDLE* rtvHandle)
+void R::Rendering::BasePass::Update(RenderContext* renderContext)
 {
     for (std::uint32_t i = 0; i < m_pJobSystem->GetNumWorkers(); i++)
     {
-        auto commandList = m_pRenderContext->GetThreadContext(i)->GetCommandList();
+        auto commandList = renderContext->GetThreadContext(i)->GetCommandList();
         commandList->SetPipelineState(m_pipelineState.Get());
         commandList->SetGraphicsRootSignature(m_rootSignature.Get());
-        commandList->OMSetRenderTargets(1, rtvHandle, FALSE, nullptr);
+        auto rtvHandle = renderContext->GetCurrentRTVHandle();
+        auto dsvHandle = renderContext->GetCurrentDSVHandle();
+        commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
 
         // Record commands.
         commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -41,7 +43,8 @@ void R::Rendering::BasePass::Update(FrameResource* frameResource, const CD3DX12_
         commandList->IASetIndexBuffer(&m_indexBufferView);
     }
 
-    m_currentFrameResource = frameResource;
+    m_jobConstData.renderContext = renderContext;
+    auto frameResource = renderContext->GetCurrentFrameResource();
 
     std::uint32_t updateBatchSize = std::max(100u, frameResource->GetCount() / 64);
     std::uint32_t count = 0;
@@ -61,15 +64,16 @@ void R::Rendering::BasePass::WaitForCompletion()
     m_pJobSystem->WaitForCounter(&m_jobCounter);
 }
 
-void R::Rendering::BasePass::SetupRSAndPSO()
+void R::Rendering::BasePass::SetupRSAndPSO(RenderContext* renderContext)
 {
     // ROOT SIG
-    CD3DX12_ROOT_PARAMETER rp[1];
+    CD3DX12_ROOT_PARAMETER rp[2];
     rp[0].InitAsConstants(SIZE_OF_32(Renderable), 0); // b0
+    rp[1].InitAsConstants(SIZE_OF_32(XMFLOAT3), 1); // b1
 
     CD3DX12_ROOT_SIGNATURE_DESC rs(_countof(rp), rp);
 
-    rs.Init(1, rp, 0, nullptr,
+    rs.Init(2, rp, 0, nullptr,
         D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
         | D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS
         | D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS
@@ -87,7 +91,7 @@ void R::Rendering::BasePass::SetupRSAndPSO()
         }
     }
 
-    LogErrorIfFailed(m_pRenderContext->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
+    LogErrorIfFailed(renderContext->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
             IID_PPV_ARGS(m_rootSignature.ReleaseAndGetAddressOf())));
 
     // PSO
@@ -113,68 +117,72 @@ void R::Rendering::BasePass::SetupRSAndPSO()
     psoDesc.PS = { pixelShaderBlob.data(), pixelShaderBlob.size() };
     psoDesc.RasterizerState = rasterizerDesc;
     psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-    psoDesc.DepthStencilState.DepthEnable = FALSE;
-    psoDesc.DepthStencilState.StencilEnable = FALSE;
-    //psoDesc.DSVFormat = GetDepthBufferFormat();
+    psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT); // a default depth stencil state;
+    psoDesc.DSVFormat = renderContext->GetDepthBufferFormat();
     psoDesc.SampleMask = UINT_MAX;
     psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
     psoDesc.NumRenderTargets = 1;
-    psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+    psoDesc.RTVFormats[0] = renderContext->GetRenderTargetFormat();
     psoDesc.SampleDesc.Count = 1;
     LogErrorIfFailed(
-        m_pRenderContext->GetDevice()->CreateGraphicsPipelineState(&psoDesc,
+        renderContext->GetDevice()->CreateGraphicsPipelineState(&psoDesc,
             IID_PPV_ARGS(m_pipelineState.ReleaseAndGetAddressOf())));
 }
 
-
-//struct Vertex
-//{
-//    DirectX::XMFLOAT3 position;
-//    DirectX::XMFLOAT3 normal;
-//    DirectX::XMFLOAT2 uv;
-//};
-
-void R::Rendering::BasePass::SetupVertexBuffer(ID3D12GraphicsCommandList* cmdList)
+void R::Rendering::BasePass::SetupVertexBuffer(RenderContext* renderContext, ID3D12GraphicsCommandList* cmdList)
 {
     // Create the vertex buffer.
     {
         // Define the geometry for a triangle.
-        PrimitivesGenerator::MeshData cubeMesh = PrimitivesGenerator::CreateGeosphere(1, 2);
+        PrimitivesGenerator::MeshData mesh = PrimitivesGenerator::CreateBox(1, 1, 1, 0);
+        UINT vertexBufferSize = static_cast<UINT>(mesh.Vertices.size()) * sizeof(PrimitivesGenerator::Vertex);
+        UINT indexBufferSize = static_cast<UINT>(mesh.GetIndices16().size()) * sizeof(uint16_t);
 
-        CommandCreateBufferFromData(m_pRenderContext->GetDevice(),
+        CommandCreateBufferFromData(renderContext->GetDevice(),
             cmdList,
             m_vertexBuffer.ReleaseAndGetAddressOf(),
             m_vertexBufferUploader.ReleaseAndGetAddressOf(),
-            cubeMesh.Vertices.data(),
-            cubeMesh.Vertices.size() * sizeof(PrimitivesGenerator::Vertex),
+            mesh.Vertices.data(),
+            vertexBufferSize,
             D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 
         // Initialize the vertex buffer view.
         m_vertexBufferView.BufferLocation = m_vertexBuffer->GetGPUVirtualAddress();
         m_vertexBufferView.StrideInBytes = sizeof(PrimitivesGenerator::Vertex);
-        m_vertexBufferView.SizeInBytes = cubeMesh.Vertices.size() * sizeof(PrimitivesGenerator::Vertex);
+        m_vertexBufferView.SizeInBytes = vertexBufferSize;
 
-        CommandCreateBufferFromData(m_pRenderContext->GetDevice(),
+        CommandCreateBufferFromData(renderContext->GetDevice(),
             cmdList,
             m_indexBuffer.ReleaseAndGetAddressOf(),
             m_indexBufferUploader.ReleaseAndGetAddressOf(),
-            cubeMesh.GetIndices16().data(),
-            cubeMesh.GetIndices16().size() * sizeof(uint16_t),
+            mesh.GetIndices16().data(),
+            indexBufferSize,
             D3D12_RESOURCE_STATE_INDEX_BUFFER);
 
         // Initialize the index buffer view.
         m_indexBufferView.BufferLocation = m_indexBuffer->GetGPUVirtualAddress();
         m_indexBufferView.Format = DXGI_FORMAT_R16_UINT;
-        m_indexBufferView.SizeInBytes = cubeMesh.GetIndices16().size() * sizeof(uint16_t);
+        m_indexBufferView.SizeInBytes = indexBufferSize;
     }
 }
+
+XMFLOAT3 colors[] = {
+    {230 / 255.f, 25 / 255.f, 75 / 255.f},
+    {245 / 255.f, 130 / 255.f, 48 / 255.f},
+    {210 / 255.f, 245 / 255.f, 60 / 255.f},
+    {70 / 255.f, 240 / 255.f, 240 / 255.f},
+    {0 / 255.f, 128 / 255.f, 128 / 255.f},
+    {220 / 255.f, 190 / 255.f, 255 / 255.f},
+    {128 / 255.f, 128 / 255.f, 0 / 255.f},
+    {128 / 255.f, 128 / 255.f, 128 / 255.f}
+};
 
 void R::Rendering::BasePass::JobFunc(void* param, std::uint32_t tid)
 {
     JobData* data = reinterpret_cast<JobData*>(param);
     Renderable* renderable;
-    auto commandList = data->basePass->m_pRenderContext->GetThreadContext(tid)->GetCommandList();
-
+    auto commandList = data->constData->renderContext->GetThreadContext(tid)->GetCommandList();
+    auto frameResource = data->constData->renderContext->GetCurrentFrameResource();
     //auto inited = (m_threadInitFlag >> tid) & 1u;
     //// If job is starting on this thread
     //if (inited == 0)
@@ -191,8 +199,9 @@ void R::Rendering::BasePass::JobFunc(void* param, std::uint32_t tid)
 
     for (std::uint32_t k = 0; k < data->batchSize; k++)
     {
-        renderable = data->basePass->m_currentFrameResource->GetRenderable(data->startIndex + k);
+        renderable = frameResource->GetRenderable(data->startIndex + k);
         commandList->SetGraphicsRoot32BitConstants(0, SIZE_OF_32(Renderable), renderable, 0);
-        commandList->DrawIndexedInstanced(960, 1, 0, 0, 0);
+        commandList->SetGraphicsRoot32BitConstants(1, SIZE_OF_32(XMFLOAT3), &colors[(data->startIndex + k) % 8], 0);
+        commandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
     }
 }

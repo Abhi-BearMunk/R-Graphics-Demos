@@ -92,6 +92,9 @@
     <ClInclude Include="Rendering\PrimitivesGenerator.h">
       <Filter>Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="Rendering\RenderingComponents.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="R-Graphics-Demos.cpp">

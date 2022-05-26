@@ -23,11 +23,13 @@ namespace R
 			struct JobConstData
 			{
 				FrameResource* frameResource;
-				XMFLOAT4X4 matVP;
+				XMFLOAT4X4 viewProj;
 			};
 			struct UpdateJobData
 			{
 				ECS::Pos* pos;
+				ECS::Rotation* rot;
+				ECS::Scale* scale;
 				JobConstData* constData;
 				std::uint32_t startIndex;
 				std::uint32_t batchSize;
@@ -36,7 +38,7 @@ namespace R
 			Job::JobSystem* const						m_pJobSystem;
 			JobConstData								m_jobConstData;
 			// Renderable updates
-			std::vector<ECS::Interest<1>>				m_entities;
+			std::vector<ECS::Interest<3>>				m_entities;
 			UpdateJobData*								m_updateJobDatas = new UpdateJobData[ECS::MAX_ENTITIES_PER_ARCHETYPE];
 			Job::JobSystem::JobCounter					m_updateCounter;
 			Job::JobSystem::JobDesc*					m_updateJobDescs = new Job::JobSystem::JobDesc[ECS::MAX_ENTITIES_PER_ARCHETYPE]; // Store it on heap because stack ~ 4mb

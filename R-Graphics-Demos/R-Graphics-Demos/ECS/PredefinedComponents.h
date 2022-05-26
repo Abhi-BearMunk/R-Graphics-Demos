@@ -1,6 +1,7 @@
 #pragma once
 #include "pch.h"
 using namespace DirectX;
+// UID -> 1 to 1 << 15
 namespace R
 {
 	namespace ECS
@@ -13,7 +14,9 @@ namespace R
 
 		struct Rotation : public XMFLOAT4
 		{
-			inline Rotation(float _x = 0.0f, float _y = 0.0f, float _z = 0.0f, float _w = 1.0f) : XMFLOAT4(_x, _y, _z, _w) {}
+			inline Rotation() : Rotation(0, 0, 0, 1) {}
+			inline Rotation(float _x, float _y, float _z) { XMStoreFloat4(this, XMQuaternionRotationRollPitchYaw(_z * DegToRad, _x * DegToRad, _y * DegToRad)); }
+			inline Rotation(float _x, float _y, float _z, float _w) : XMFLOAT4(_x, _y, _z, _w) {}
 			static const std::uint64_t uid = 1 << 1;
 		};
 

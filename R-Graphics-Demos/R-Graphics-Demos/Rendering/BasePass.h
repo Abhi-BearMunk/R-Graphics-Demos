@@ -15,23 +15,27 @@ namespace R
 		{
 			friend class BasePass;
 		public:
-			BasePass(RenderContext* globalContext, Job::JobSystem* jobSystem);
+			BasePass(Job::JobSystem* jobSystem);
 			~BasePass();
-			void Init(ID3D12GraphicsCommandList* cmdList);
-			void Update(FrameResource* frameResource, const CD3DX12_CPU_DESCRIPTOR_HANDLE* rtvHandle);
+			void Init(RenderContext* renderContext, ID3D12GraphicsCommandList* cmdList);
+			void Update(RenderContext* renderContext);
 			void WaitForCompletion();
 		private:
-			void SetupRSAndPSO();
-			void SetupVertexBuffer(ID3D12GraphicsCommandList* cmdList);
+			void SetupRSAndPSO(RenderContext* renderContext);
+			void SetupVertexBuffer(RenderContext* renderContext, ID3D12GraphicsCommandList* cmdList);
+			struct JobConstData
+			{
+				RenderContext* renderContext;
+			};
+
 			struct JobData
 			{
-				BasePass* basePass;
+				JobConstData* constData;
 				std::uint32_t startIndex;
 				std::uint32_t batchSize;
 			};
 
-			RenderContext*								m_pRenderContext;
-			FrameResource*								m_currentFrameResource;
+			JobConstData								m_jobConstData;
 
 			Job::JobSystem*								m_pJobSystem;
 			Job::JobSystem::JobCounter					m_jobCounter;

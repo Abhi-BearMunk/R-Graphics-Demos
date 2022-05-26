@@ -59,3 +59,11 @@ DEL_MOVE_CTOR(X)
 #define SIZE_OF_16(x) sizeof(x) / sizeof(std::uint16_t)
 #define SIZE_OF_32(x) sizeof(x) / sizeof(std::uint32_t)
 #define SIZE_OF_64(x) sizeof(x) / sizeof(std::uint64_t)
+
+#define NAME_D3D12_OBJECT(x) x->SetName(L#x)
+
+namespace R
+{
+	constexpr float DegToRad = DirectX::XM_PI / 180.0f;
+	constexpr float RadToDeg = 180.0f / DirectX::XM_PI;
+}

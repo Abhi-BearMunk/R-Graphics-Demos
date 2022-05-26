@@ -27,31 +27,36 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
     // TODO: Place code here.
     R::ECS::World world;
     R::Utils::Logger logger;
-    world.RegisterArchetype<R::ECS::Pos, R::Test::Velocity>();
-    world.RegisterArchetype<R::ECS::Pos, R::Test::Velocity, Health>();
-    auto e1 = world.CreateEntity<R::ECS::Pos, R::Test::Velocity, Health>({ 0.0f, 0.0f, 10.0f }, { 2.f, 0.0f, 0.0f }, { 100 });
-    auto e2 = world.CreateEntity<R::ECS::Pos, R::Test::Velocity>({ -0.20f, 0.0f, 5.0f }, { -0.02f, 0.0f, 0.0f });
-    auto e3 = world.CreateEntity<R::ECS::Pos, R::Test::Velocity, Health>({ 2.10f, -0.10f, 10.0f }, { 0.0f, 0.0f, 0.0f }, { 50 });
-    auto e4 = world.CreateEntity<R::ECS::Pos, R::Test::Velocity, Health>({ 0.643f, -0.67f, 20.0f }, { -0.03f, 0.0f, 0.0f }, { 75 });
-    auto e5 = world.CreateEntity<R::ECS::Pos, R::Test::Velocity>({ 0.1f, 0.10f, 40.0f }, { 0.10f, 0.0f, 0.0f });
-    std::uint32_t count = 50000;
+    world.RegisterArchetype<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity>();
+    world.RegisterArchetype<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity, Health>();
+    auto e1 = world.CreateEntity<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity, Health>({ 0.0f, 0.0f, 10.0f }, R::ECS::Rotation(0.f, 0.f, 0.f), {1.f, 1.f, 1.f}, { 2.f, 0.0f, 0.0f }, { 100 });
+    auto e2 = world.CreateEntity<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity>({ -0.20f, 0.0f, 5.0f }, R::ECS::Rotation(-60.f, 0.f, 0.f), {1.f, 4.f, 7.f }, { -0.02f, 0.0f, 0.0f });
+    auto e3 = world.CreateEntity<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity, Health>({ 2.10f, -0.10f, 10.0f }, R::ECS::Rotation(45.f, 0.f, 45.f), { 3.f, 2.f, 1.f }, { 0.0f, 0.0f, 0.0f }, { 50 });
+    auto e4 = world.CreateEntity<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity, Health>({ 0.643f, -0.67f, 20.0f }, R::ECS::Rotation(0.f, -750.f, 0.f), { 0.1f, 0.1f, 0.1f }, { -0.03f, 0.0f, 0.0f }, { 75 });
+    auto e5 = world.CreateEntity<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity>({ 0.1f, 0.10f, 40.0f }, R::ECS::Rotation(0.f, 0.f, 30.f), { 4.f, 4.f, 4.f }, { 0.10f, 0.0f, 0.0f });
+    std::uint32_t count = 25000;
     for (std::uint32_t i = 0; i < count; i++)
     {
         R::ECS::Pos p;
         p.x = (float)(rand() % 100) - 50;
         p.y = (float)(rand() % 100) - 50;
         p.z = (float)(rand() % 100);
+        R::ECS::Rotation r((float)(rand() % 360), (float)(rand() % 360), (float)(rand() % 360));
+        R::ECS::Scale s;
+        s.x = (float)(rand() % 10) / 5.f + 0.5f;
+        s.y = (float)(rand() % 10) / 5.f + 0.5f;
+        s.z = (float)(rand() % 10) / 5.f + 0.5f;
         R::Test::Velocity v;
         v.x = (float)(rand() % 10) / 20.0f - 0.25f;
         v.y = (float)(rand() % 10) / 20.0f - 0.25f;
         v.z = (float)(rand() % 10) / 20.0f - 0.25f;
         if (i < count / 2)
         {
-            world.CreateEntity<R::ECS::Pos, R::Test::Velocity, Health>(p, v, { 100 });
+            world.CreateEntity<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity, Health>(p, r, s, v, { 100 });
         }
         else
         {
-            world.CreateEntity<R::ECS::Pos, R::Test::Velocity>(p, v);
+            world.CreateEntity<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity>(p, r, s, v);
         }
     }
 

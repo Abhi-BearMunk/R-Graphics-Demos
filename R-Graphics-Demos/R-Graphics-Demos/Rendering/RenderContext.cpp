@@ -93,6 +93,56 @@ namespace R
                 LogErrorIfFailed(m_device->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&m_rtvHeap)));
 
                 m_rtvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+
+
+                D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
+                dsvHeapDesc.NumDescriptors = FrameBuffersCount;
+                dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+                dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+                LogErrorIfFailed(m_device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&m_dsvHeap)));
+
+                m_dsvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+
+            }
+
+            // Create the depth stencil.
+            {
+                CD3DX12_RESOURCE_DESC shadowTextureDesc(
+                    D3D12_RESOURCE_DIMENSION_TEXTURE2D,
+                    0,
+                    static_cast<UINT>(m_width),
+                    static_cast<UINT>(m_height),
+                    1,
+                    1,
+                    DXGI_FORMAT_D32_FLOAT,
+                    1,
+                    0,
+                    D3D12_TEXTURE_LAYOUT_UNKNOWN,
+                    D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL | D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE);
+
+                D3D12_CLEAR_VALUE clearValue;    // Performance tip: Tell the runtime at resource creation the desired clear value.
+                clearValue.Format = DXGI_FORMAT_D32_FLOAT;
+                clearValue.DepthStencil.Depth = 1.0f;
+                clearValue.DepthStencil.Stencil = 0;
+
+                CD3DX12_CPU_DESCRIPTOR_HANDLE dsvHandle(m_dsvHeap->GetCPUDescriptorHandleForHeapStart());
+                D3D12_HEAP_PROPERTIES defaultHeap = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+                for (std::uint32_t n = 0; n < FrameBuffersCount; n++)
+                {
+                    LogErrorIfFailed(m_device->CreateCommittedResource(
+                        &defaultHeap,
+                        D3D12_HEAP_FLAG_NONE,
+                        &shadowTextureDesc,
+                        D3D12_RESOURCE_STATE_DEPTH_WRITE,
+                        &clearValue,
+                        IID_PPV_ARGS(&m_depthStencil[n])));
+
+                    NAME_D3D12_OBJECT(m_depthStencil[n]);
+
+                    // Create the depth stencil view.
+                    m_device->CreateDepthStencilView(m_depthStencil[n].Get(), nullptr, dsvHandle);
+                    dsvHandle.Offset(1, m_dsvDescriptorSize);
+                }
             }
 
             // Create frame resources.

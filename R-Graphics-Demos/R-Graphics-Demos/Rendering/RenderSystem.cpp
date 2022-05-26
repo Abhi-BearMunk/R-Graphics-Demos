@@ -6,7 +6,7 @@ R::Rendering::RenderSystem::RenderSystem(const std::uint32_t width, const std::u
 	:
 	m_renderContext(width, height, windowHandle, jobSystem.GetNumWorkers()),
 	m_pJobSystem(&jobSystem),
-	m_basePass(&m_renderContext, m_pJobSystem),
+	m_basePass(m_pJobSystem),
 	m_beginFrame(m_renderContext.GetDevice(), L"BeginFrame"),
 	m_endFrame(m_renderContext.GetDevice(), L"EndFrame")
 {
@@ -15,7 +15,7 @@ R::Rendering::RenderSystem::RenderSystem(const std::uint32_t width, const std::u
 
 	ThreadRenderContext<1> temp(m_renderContext.GetDevice(), L"InitializeResources");
 	// TODO: Init Passes
-	m_basePass.Init(temp.GetCommandList());
+	m_basePass.Init(&m_renderContext, temp.GetCommandList());
 
 	LogErrorIfFailed(temp.GetCommandList()->Close());
 	ID3D12CommandList* ppCommandLists[] = { temp.GetCommandList() };
@@ -36,20 +36,20 @@ void R::Rendering::RenderSystem::Render()
 	assert(m_renderContext.GetCurrentFrameResource()->GetState() == FrameResource::FrameResourceState::e_free);
 
 	// ========== Begin Frame ==========
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_renderContext.GetRTVHeap()->GetCPUDescriptorHandleForHeapStart(),
-		m_renderContext.GetFrameIndex(), m_renderContext.GetRTVDescriptorSize());
 	{
 		m_beginFrame.Reset(m_renderContext.GetFrameIndex());
+		auto commandList = m_beginFrame.GetCommandList();
 
-		auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(m_renderContext.GetRenderTarget(m_renderContext.GetFrameIndex()),
+		auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(m_renderContext.GetCurrentRenderTarget(),
 			D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-		m_beginFrame.GetCommandList()->ResourceBarrier(1, &barrier);
+		commandList->ResourceBarrier(1, &barrier);
 
 		const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
-		m_beginFrame.GetCommandList()->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+		commandList->ClearRenderTargetView(m_renderContext.GetCurrentRTVHandle(), clearColor, 0, nullptr);
+		commandList->ClearDepthStencilView(m_renderContext.GetCurrentDSVHandle(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, nullptr);
 
-		LogErrorIfFailed(m_beginFrame.GetCommandList()->Close());
-		ID3D12CommandList* ppCommandLists[] = { m_beginFrame.GetCommandList() };
+		LogErrorIfFailed(commandList->Close());
+		ID3D12CommandList* ppCommandLists[] = { commandList };
 		m_renderContext.GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 	}
 
@@ -65,7 +65,7 @@ void R::Rendering::RenderSystem::Render()
 
 	// TODO : Submit GPU Work
 	// ...
-	m_basePass.Update(m_renderContext.GetCurrentFrameResource(), &rtvHandle);
+	m_basePass.Update(&m_renderContext);
 	m_basePass.WaitForCompletion();
 
 	// ========== End Frame ==========
@@ -77,7 +77,7 @@ void R::Rendering::RenderSystem::Render()
 
 	{
 		m_endFrame.Reset(m_renderContext.GetFrameIndex());
-		auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(m_renderContext.GetRenderTarget(m_renderContext.GetFrameIndex()),
+		auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(m_renderContext.GetCurrentRenderTarget(),
 			D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
 		m_endFrame.GetCommandList()->ResourceBarrier(1, &barrier);
 		LogErrorIfFailed(m_endFrame.GetCommandList()->Close());

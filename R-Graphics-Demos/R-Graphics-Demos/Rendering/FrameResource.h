@@ -31,10 +31,10 @@ namespace R
 			inline void SetCount(const std::uint32_t& count) { m_count = count; }
 		private:
 			Renderable*									m_renderables = new Renderable[ECS::MAX_ENTITIES_PER_ARCHETYPE]; 
-			std::uint32_t									m_count;
+			std::uint32_t								m_count;
 			FrameResourceState							m_state;
 			// Synchronization objects.
-			std::uint64_t									m_fenceValue;
+			std::uint64_t								m_fenceValue;
 			HANDLE										m_eventHandle;
 		};
 	}

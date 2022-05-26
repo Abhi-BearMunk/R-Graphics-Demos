@@ -164,6 +164,7 @@
     <ClInclude Include="Rendering\RenderContext.h" />
     <ClInclude Include="Rendering\GraphicsUtils.h" />
     <ClInclude Include="Rendering\Renderables.h" />
+    <ClInclude Include="Rendering\RenderingComponents.h" />
     <ClInclude Include="Rendering\RenderSystem.h" />
     <ClInclude Include="Rendering\ThreadRenderContext.h" />
     <ClInclude Include="Rendering\RenderableManager.h" />

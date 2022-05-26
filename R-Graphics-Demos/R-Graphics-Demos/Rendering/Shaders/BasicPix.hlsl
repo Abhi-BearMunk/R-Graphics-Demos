@@ -1,3 +1,9 @@
+
+cbuffer Thread : register(b1)
+{
+    float3 col;
+};
+
 struct PixelIn
 {
     float4 pos : SV_Position;
@@ -6,5 +12,5 @@ struct PixelIn
 
 float4 main(PixelIn input) : SV_TARGET
 {
-    return float4(input.uv, 0, 1);
+    return float4(col, 1);
 }

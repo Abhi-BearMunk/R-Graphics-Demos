@@ -4,7 +4,7 @@
 R::Rendering::RenderableManager::RenderableManager(ECS::World& world, Job::JobSystem& jobSystem)
 	:m_pJobSystem(&jobSystem)
 {
-	world.InterestedIn<ECS::Pos>(m_entities);
+	world.InterestedIn<ECS::Pos, ECS::Rotation, ECS::Scale>(m_entities);
 	for (int i = 0; i < ECS::MAX_ENTITIES_PER_ARCHETYPE; i++)
 	{
 		m_updateJobDescs[i].jobFunc = &RenderableManager::UpdateJobFunc;
@@ -28,14 +28,13 @@ void R::Rendering::RenderableManager::Update(RenderContext* renderContext)
 	m_jobConstData.frameResource = renderContext->GetCurrentFrameResource();
 
 	// Calculate View-Proj Mat
-	Camera* cam = renderContext->GetCamera();
-	//XMMATRIX vp = XMMatrixPerspectiveFovLH(cam->fov * 0.0174533f, renderContext->GetAspectRatio(), cam->nearPlane, cam->farPlane);
-	XMVECTOR pos = XMLoadFloat3(&cam->position);
-	XMVECTOR fwd = XMLoadFloat3(&cam->forward);
-	XMVECTOR up = XMLoadFloat3(&cam->up);
-	
-	XMStoreFloat4x4(&m_jobConstData.matVP, XMMatrixMultiply(XMMatrixLookToLH(pos, fwd, up),
-		XMMatrixPerspectiveFovLH(cam->fov * 0.0174533f, renderContext->GetAspectRatio(), cam->nearPlane, cam->farPlane)));
+	Camera* cam		= renderContext->GetCamera();
+	XMVECTOR pos	= XMLoadFloat3(&cam->position);
+	XMVECTOR fwd	= XMLoadFloat3(&cam->forward);
+	XMVECTOR up		= XMLoadFloat3(&cam->up);
+	XMMATRIX view	= XMMatrixLookToLH(pos, fwd, up);
+	XMMATRIX proj	= XMMatrixPerspectiveFovLH(cam->fov * DegToRad, renderContext->GetAspectRatio(), cam->nearPlane, cam->farPlane);
+	XMStoreFloat4x4(&m_jobConstData.viewProj, XMMatrixMultiply(view, proj));
 
 	// Populate Jobs
 	std::uint32_t updateBatchSize = 0;
@@ -52,6 +51,8 @@ void R::Rendering::RenderableManager::Update(RenderContext* renderContext)
 		for (std::uint32_t j = 0; j < m_entities[i].entityCount; j += updateBatchSize)
 		{
 			m_updateJobDatas[count].pos = &reinterpret_cast<ECS::Pos*>(m_entities[i].ppComps[0])[j];
+			m_updateJobDatas[count].rot = &reinterpret_cast<ECS::Rotation*>(m_entities[i].ppComps[1])[j];
+			m_updateJobDatas[count].scale = &reinterpret_cast<ECS::Scale*>(m_entities[i].ppComps[2])[j];
 			m_updateJobDatas[count].startIndex = startIndex;
 			m_updateJobDatas[count].batchSize = std::min(updateBatchSize, m_entities[i].entityCount - j);
 			//JobFunc(&datas[count]);
@@ -80,20 +81,19 @@ void R::Rendering::RenderableManager::UpdateJobFunc(void* param, std::uint32_t t
 	FrameResource* frameResource = constData->frameResource;
 	Renderable* renderable;
 
-	XMFLOAT3 scale{ 1, 1, 1 };
-	XMVECTOR sv = XMLoadFloat3(&scale);
-	XMFLOAT3 pos{ 0, 0, 0 };
-	XMVECTOR pv = XMLoadFloat3(&pos);
-	XMFLOAT4 rot{ 0, 0, 0, 1 };
-	XMVECTOR rv = XMLoadFloat4(&rot);
+	XMVECTOR scale;
+	XMVECTOR rotation;
 	XMVECTOR translation;
-	XMMATRIX vp = XMLoadFloat4x4(&constData->matVP);
+	XMMATRIX vp = XMLoadFloat4x4(&constData->viewProj);
+	XMMATRIX model;
+
 	for (std::uint32_t k = 0; k < data->batchSize; k++)
 	{
 		renderable = frameResource->GetRenderable(data->startIndex + k);
+		scale = XMLoadFloat3(&data->scale[k]);
+		rotation = XMLoadFloat4(&data->rot[k]);
 		translation = XMLoadFloat3(&data->pos[k]);
-		//XMMATRIX m = XMMatrixAffineTransformation(sv, pv, rv, translation);
-		XMStoreFloat4x4(&renderable->matrix, XMMatrixTranspose(XMMatrixMultiply(XMMatrixTranslationFromVector(XMLoadFloat3(&data->pos[k])), vp)));
-
+		model = XMMatrixAffineTransformation(scale, XMVectorZero(), rotation, translation);
+		XMStoreFloat4x4(&renderable->matrix, XMMatrixTranspose(XMMatrixMultiply(model, vp)));
 	}
 }
