@@ -56,6 +56,6 @@ X& operator = (X&&) = delete;
 DEL_COPY_CTOR(X) \
 DEL_MOVE_CTOR(X)
 
-#define SIZE_OF_16(x) sizeof(x) / sizeof(uint16_t)
-#define SIZE_OF_32(x) sizeof(x) / sizeof(uint32_t)
-#define SIZE_OF_64(x) sizeof(x) / sizeof(uint64_t)
+#define SIZE_OF_16(x) sizeof(x) / sizeof(std::uint16_t)
+#define SIZE_OF_32(x) sizeof(x) / sizeof(std::uint32_t)
+#define SIZE_OF_64(x) sizeof(x) / sizeof(std::uint64_t)

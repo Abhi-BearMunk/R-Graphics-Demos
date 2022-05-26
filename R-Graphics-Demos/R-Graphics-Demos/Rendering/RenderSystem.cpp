@@ -2,7 +2,7 @@
 #include "RenderSystem.h"
 #include "FrameResource.h"
 
-R::Rendering::RenderSystem::RenderSystem(const uint32_t width, const uint32_t height, const HWND windowHandle, ECS::World& world, Job::JobSystem& jobSystem)
+R::Rendering::RenderSystem::RenderSystem(const std::uint32_t width, const std::uint32_t height, const HWND windowHandle, ECS::World& world, Job::JobSystem& jobSystem)
 	:
 	m_renderContext(width, height, windowHandle, jobSystem.GetNumWorkers()),
 	m_pJobSystem(&jobSystem),
@@ -56,7 +56,7 @@ void R::Rendering::RenderSystem::Render()
 
 	// ========== Passes ==========
 	// Todo Move this to affinity based job if needed?
-	for (uint32_t i = 0; i < m_pJobSystem->GetNumWorkers(); i++)
+	for (std::uint32_t i = 0; i < m_pJobSystem->GetNumWorkers(); i++)
 	{
 		m_renderContext.GetThreadContext(i)->Reset(m_renderContext.GetFrameIndex());
 		m_renderContext.GetThreadContext(i)->GetCommandList()->RSSetViewports(1, m_renderContext.GetViewPort());
@@ -69,7 +69,7 @@ void R::Rendering::RenderSystem::Render()
 	m_basePass.WaitForCompletion();
 
 	// ========== End Frame ==========
-	for (uint32_t i = 0; i < m_pJobSystem->GetNumWorkers(); i++)
+	for (std::uint32_t i = 0; i < m_pJobSystem->GetNumWorkers(); i++)
 	{
 		LogErrorIfFailed(m_renderContext.GetThreadContext(i)->GetCommandList()->Close());
 	}

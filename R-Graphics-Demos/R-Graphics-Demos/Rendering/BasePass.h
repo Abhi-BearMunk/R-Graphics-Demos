@@ -6,6 +6,7 @@
 #include "ThreadRenderContext.h"
 #include "Renderables.h"
 #include "FrameResource.h"
+#include "PrimitivesGenerator.h"
 namespace R
 {
 	namespace Rendering
@@ -25,8 +26,8 @@ namespace R
 			struct JobData
 			{
 				BasePass* basePass;
-				uint32_t startIndex;
-				uint32_t batchSize;
+				std::uint32_t startIndex;
+				std::uint32_t batchSize;
 			};
 
 			RenderContext*								m_pRenderContext;
@@ -36,13 +37,14 @@ namespace R
 			Job::JobSystem::JobCounter					m_jobCounter;
 			JobData*									m_jobDatas = new JobData[ECS::MAX_ENTITIES_PER_ARCHETYPE];
 			Job::JobSystem::JobDesc*					m_jobDescs = new Job::JobSystem::JobDesc[ECS::MAX_ENTITIES_PER_ARCHETYPE];
-			static void JobFunc(void* param, uint32_t tid);
+			static void JobFunc(void* param, std::uint32_t tid);
 
 			ComPtr<ID3D12RootSignature>					m_rootSignature;
 			ComPtr<ID3D12PipelineState>					m_pipelineState;
 			Microsoft::WRL::ComPtr<ID3D12Resource>		m_vertexBuffer;
-			Microsoft::WRL::ComPtr<ID3D12Resource>      m_vertexUploadBuffer;
+			Microsoft::WRL::ComPtr<ID3D12Resource>      m_vertexBufferUploader;
 			Microsoft::WRL::ComPtr<ID3D12Resource>      m_indexBuffer;
+			Microsoft::WRL::ComPtr<ID3D12Resource>      m_indexBufferUploader;
 			D3D12_VERTEX_BUFFER_VIEW                    m_vertexBufferView;
 			D3D12_INDEX_BUFFER_VIEW                     m_indexBufferView;
 		};

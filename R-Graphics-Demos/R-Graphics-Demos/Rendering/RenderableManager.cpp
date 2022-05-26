@@ -38,18 +38,18 @@ void R::Rendering::RenderableManager::Update(RenderContext* renderContext)
 		XMMatrixPerspectiveFovLH(cam->fov * 0.0174533f, renderContext->GetAspectRatio(), cam->nearPlane, cam->farPlane)));
 
 	// Populate Jobs
-	uint32_t updateBatchSize = 0;
-	for (uint32_t i = 0; i < m_entities.size(); i++)
+	std::uint32_t updateBatchSize = 0;
+	for (std::uint32_t i = 0; i < m_entities.size(); i++)
 	{
 		updateBatchSize += m_entities[i].entityCount;
 	}
 	updateBatchSize /= 64;
 	updateBatchSize = std::max(1000u, updateBatchSize);
-	uint32_t count = 0;
-	uint32_t startIndex = 0;
-	for (uint32_t i = 0; i < m_entities.size(); i++)
+	std::uint32_t count = 0;
+	std::uint32_t startIndex = 0;
+	for (std::uint32_t i = 0; i < m_entities.size(); i++)
 	{
-		for (uint32_t j = 0; j < m_entities[i].entityCount; j += updateBatchSize)
+		for (std::uint32_t j = 0; j < m_entities[i].entityCount; j += updateBatchSize)
 		{
 			m_updateJobDatas[count].pos = &reinterpret_cast<ECS::Pos*>(m_entities[i].ppComps[0])[j];
 			m_updateJobDatas[count].startIndex = startIndex;
@@ -73,7 +73,7 @@ void R::Rendering::RenderableManager::WaitForUpdate()
 	m_pJobSystem->WaitForCounter(&m_updateCounter);
 }
 
-void R::Rendering::RenderableManager::UpdateJobFunc(void* param, uint32_t tid)
+void R::Rendering::RenderableManager::UpdateJobFunc(void* param, std::uint32_t tid)
 {
 	UpdateJobData* data = reinterpret_cast<UpdateJobData*>(param);
 	JobConstData* constData = data->constData;
@@ -88,7 +88,7 @@ void R::Rendering::RenderableManager::UpdateJobFunc(void* param, uint32_t tid)
 	XMVECTOR rv = XMLoadFloat4(&rot);
 	XMVECTOR translation;
 	XMMATRIX vp = XMLoadFloat4x4(&constData->matVP);
-	for (uint32_t k = 0; k < data->batchSize; k++)
+	for (std::uint32_t k = 0; k < data->batchSize; k++)
 	{
 		renderable = frameResource->GetRenderable(data->startIndex + k);
 		translation = XMLoadFloat3(&data->pos[k]);

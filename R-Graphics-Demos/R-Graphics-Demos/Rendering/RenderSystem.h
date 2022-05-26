@@ -15,7 +15,7 @@ namespace R
 		class RenderSystem
 		{
 		public:
-			RenderSystem(const uint32_t width, const uint32_t height, const HWND windowHandle, ECS::World& world, Job::JobSystem& jobSystem);
+			RenderSystem(const std::uint32_t width, const std::uint32_t height, const HWND windowHandle, ECS::World& world, Job::JobSystem& jobSystem);
 			~RenderSystem();
 			void Render();
 			inline RenderContext* GetRenderContext() { return &m_renderContext; }

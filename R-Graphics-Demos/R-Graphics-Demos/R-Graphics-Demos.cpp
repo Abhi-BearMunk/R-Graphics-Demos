@@ -12,7 +12,7 @@
 struct Health
 {
     int hp;
-    static const uint64_t uid = 1 << 4;
+    static const std::uint64_t uid = 1 << 4;
 };
 R::Test::MoveSystem* mv;
 R::Rendering::RenderSystem* rs;
@@ -34,8 +34,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
     auto e3 = world.CreateEntity<R::ECS::Pos, R::Test::Velocity, Health>({ 2.10f, -0.10f, 10.0f }, { 0.0f, 0.0f, 0.0f }, { 50 });
     auto e4 = world.CreateEntity<R::ECS::Pos, R::Test::Velocity, Health>({ 0.643f, -0.67f, 20.0f }, { -0.03f, 0.0f, 0.0f }, { 75 });
     auto e5 = world.CreateEntity<R::ECS::Pos, R::Test::Velocity>({ 0.1f, 0.10f, 40.0f }, { 0.10f, 0.0f, 0.0f });
-    uint32_t count = 50000;
-    for (uint32_t i = 0; i < count; i++)
+    std::uint32_t count = 50000;
+    for (std::uint32_t i = 0; i < count; i++)
     {
         R::ECS::Pos p;
         p.x = (float)(rand() % 100) - 50;

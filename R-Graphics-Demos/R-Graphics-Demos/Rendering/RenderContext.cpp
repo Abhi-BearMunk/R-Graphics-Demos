@@ -5,7 +5,7 @@ namespace R
 {
 	namespace Rendering
 	{
-		RenderContext::RenderContext(const uint32_t width, const uint32_t height, const HWND windowHandle, const uint32_t threadPoolSize)
+		RenderContext::RenderContext(const std::uint32_t width, const std::uint32_t height, const HWND windowHandle, const std::uint32_t threadPoolSize)
             :m_width(width), 
             m_height(height), 
             m_frameIndex(FrameBuffersCount - 1), 
@@ -100,7 +100,7 @@ namespace R
                 CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(m_rtvHeap->GetCPUDescriptorHandleForHeapStart());
 
                 // Create a RTV for each frame.
-                for (uint32_t n = 0; n < FrameBuffersCount; n++)
+                for (std::uint32_t n = 0; n < FrameBuffersCount; n++)
                 {
                     LogErrorIfFailed(m_swapChain->GetBuffer(n, IID_PPV_ARGS(&m_renderTargets[n])));
                     m_device->CreateRenderTargetView(m_renderTargets[n].Get(), nullptr, rtvHandle);

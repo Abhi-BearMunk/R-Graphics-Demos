@@ -5,7 +5,9 @@ cbuffer Renderable : register(b0)
 
 struct VertexIn
 {
-    float4 pos : POSITION;
+    float3 pos : POSITION;
+    float3 normal : NORMAL;
+    float3 tangent : TANGENT;
     float2 uv : TEXCOORD0;
 };
 
@@ -18,7 +20,7 @@ struct VertexOut
 VertexOut main(VertexIn vert)
 {
     VertexOut vout;
-    vout.pos = mul(vert.pos, mat);
+    vout.pos = mul(float4(vert.pos, 1.), mat);
     vout.uv = vert.uv;
     return vout;
 }

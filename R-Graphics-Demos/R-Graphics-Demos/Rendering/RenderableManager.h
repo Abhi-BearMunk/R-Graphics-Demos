@@ -18,7 +18,7 @@ namespace R
 			void Update(RenderContext* renderContext);
 			void WaitForUpdate();
 		private:
-			static void UpdateJobFunc(void* param, uint32_t tid);
+			static void UpdateJobFunc(void* param, std::uint32_t tid);
 
 			struct JobConstData
 			{
@@ -29,8 +29,8 @@ namespace R
 			{
 				ECS::Pos* pos;
 				JobConstData* constData;
-				uint32_t startIndex;
-				uint32_t batchSize;
+				std::uint32_t startIndex;
+				std::uint32_t batchSize;
 			};
 
 			Job::JobSystem* const						m_pJobSystem;

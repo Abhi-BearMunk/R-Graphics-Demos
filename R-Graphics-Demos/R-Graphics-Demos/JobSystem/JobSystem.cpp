@@ -4,7 +4,7 @@
 R::Job::JobSystem::JobSystem()
 {
 	m_JobsWithThreadAffinity.resize(std::thread::hardware_concurrency());
-	for (uint32_t i = 0; i < std::thread::hardware_concurrency(); i++)
+	for (std::uint32_t i = 0; i < std::thread::hardware_concurrency(); i++)
 	{
 		m_threadPool.emplace_back(std::thread(&JobSystem::ProcessJobs, this, i));
 #ifdef _DEBUG
@@ -22,18 +22,18 @@ R::Job::JobSystem::~JobSystem()
 		thread.join();
 	}
 #ifdef _DEBUG
-	for (uint32_t i = 0; i < m_threadJobs.size(); i++)
+	for (std::uint32_t i = 0; i < m_threadJobs.size(); i++)
 	{
 		R_LOG_DEBUG("Num jobs by thread {} = {}", i, m_threadJobs[i]);
 	}
 #endif // _DEBUG
 }
 
-void R::Job::JobSystem::KickJobsWithPriority(const JobDesc* aDesc, uint32_t nJobs)
+void R::Job::JobSystem::KickJobsWithPriority(const JobDesc* aDesc, std::uint32_t nJobs)
 {
 	{
 		std::lock_guard<std::mutex> lock(m_qInUse);
-		for (uint32_t i = 0; i < nJobs; i++)
+		for (std::uint32_t i = 0; i < nJobs; i++)
 		{
 			switch (aDesc[i].priorityOrAffinity.priority)
 			{
@@ -52,11 +52,11 @@ void R::Job::JobSystem::KickJobsWithPriority(const JobDesc* aDesc, uint32_t nJob
 	m_wakeSleepingThread.notify_one();
 }
 
-void R::Job::JobSystem::KickJobsWithAffinity(const JobDesc* aDesc, uint32_t nJobs)
+void R::Job::JobSystem::KickJobsWithAffinity(const JobDesc* aDesc, std::uint32_t nJobs)
 {
 	{
 		std::lock_guard<std::mutex> lock(m_qInUse);
-		for (uint32_t i = 0; i < nJobs; i++)
+		for (std::uint32_t i = 0; i < nJobs; i++)
 		{
 			m_JobsWithThreadAffinity[aDesc[i].priorityOrAffinity.affinity].push(aDesc[i]);
 		}
@@ -73,21 +73,21 @@ void R::Job::JobSystem::WaitForCounter(JobCounter* pCounter)
 	}
 }
 
-void R::Job::JobSystem::KickJobsWithPriorityAndWait(const JobDesc* aDesc, uint32_t nJobs)
+void R::Job::JobSystem::KickJobsWithPriorityAndWait(const JobDesc* aDesc, std::uint32_t nJobs)
 {
 	KickJobsWithPriority(aDesc, nJobs);
 	assert(nJobs != 0);
 	WaitForCounter(aDesc[0].pCounter);
 }
 
-void R::Job::JobSystem::KickJobsWithAffinityAndWait(const JobDesc* aDesc, uint32_t nJobs)
+void R::Job::JobSystem::KickJobsWithAffinityAndWait(const JobDesc* aDesc, std::uint32_t nJobs)
 {
 	KickJobsWithAffinity(aDesc, nJobs);
 	assert(nJobs != 0);
 	WaitForCounter(aDesc[0].pCounter);
 }
 
-void R::Job::JobSystem::ProcessJobs(uint32_t tid)
+void R::Job::JobSystem::ProcessJobs(std::uint32_t tid)
 {
 	JobDesc job;
 	while (!m_stopRunning)
@@ -147,7 +147,7 @@ bool R::Job::JobSystem::SharedJobsAvailable()
 	return !m_highPriorityJobs.empty() || !m_medPriorityJobs.empty() || !m_lowPriorityJobs.empty();
 }
 
-bool R::Job::JobSystem::LockedJobsAvailable(uint32_t tid)
+bool R::Job::JobSystem::LockedJobsAvailable(std::uint32_t tid)
 {
 	return !m_JobsWithThreadAffinity[tid].empty();
 }

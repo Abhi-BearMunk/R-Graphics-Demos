@@ -17,7 +17,7 @@ namespace R
 			DEL_DEFAULT_COPY_MOVE_CTORS(ThreadRenderContext)
 
 			inline ID3D12GraphicsCommandList* GetCommandList() { return m_commandList.Get(); }
-			void Reset(uint32_t index, ID3D12PipelineState* initialState = nullptr);
+			void Reset(std::uint32_t index, ID3D12PipelineState* initialState = nullptr);
 
 		private:
 			ComPtr<ID3D12CommandAllocator>		m_commandAllocator[NumBuffers];
@@ -50,7 +50,7 @@ R::Rendering::ThreadRenderContext<NumBuffers>::~ThreadRenderContext()
 }
 
 template<size_t NumBuffers>
-void R::Rendering::ThreadRenderContext<NumBuffers>::Reset(uint32_t index, ID3D12PipelineState* initialState)
+void R::Rendering::ThreadRenderContext<NumBuffers>::Reset(std::uint32_t index, ID3D12PipelineState* initialState)
 {
 	LogErrorIfFailed(m_commandAllocator[index]->Reset());
 	LogErrorIfFailed(m_commandList->Reset(m_commandAllocator[index].Get(), initialState));

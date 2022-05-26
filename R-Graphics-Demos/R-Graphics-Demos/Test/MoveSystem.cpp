@@ -6,7 +6,7 @@ R::Test::MoveSystem::MoveSystem(ECS::World& world, Job::JobSystem& jobSystem)
 	:pJobSystem(&jobSystem), moveBatchSize(0)
 {
 	world.InterestedIn<ECS::Pos, Test::Velocity>(entities);
-	for (uint32_t i = 0; i < entities.size(); i++)
+	for (std::uint32_t i = 0; i < entities.size(); i++)
 	{
 		moveBatchSize += entities[i].entityCount;
 	}
@@ -29,9 +29,9 @@ R::Test::MoveSystem::~MoveSystem()
 void R::Test::MoveSystem::Update(const float& dt)
 {
 	int count = 0;
-	for (uint32_t i = 0; i < entities.size(); i++)
+	for (std::uint32_t i = 0; i < entities.size(); i++)
 	{
-		for (uint32_t j = 0; j < entities[i].entityCount; j += moveBatchSize)
+		for (std::uint32_t j = 0; j < entities[i].entityCount; j += moveBatchSize)
 		{
 			datas[count].pos = &reinterpret_cast<ECS::Pos*>(entities[i].ppComps[0])[j];
 			datas[count].vel = &reinterpret_cast<Test::Velocity*>(entities[i].ppComps[1])[j];
@@ -50,10 +50,10 @@ void R::Test::MoveSystem::WaitForCompletion()
 	pJobSystem->WaitForCounter(&moveCounter);
 }
 
-void R::Test::MoveSystem::JobFunc(void* param, uint32_t tid)
+void R::Test::MoveSystem::JobFunc(void* param, std::uint32_t tid)
 {
 	JobData* data = reinterpret_cast<JobData*>(param);
-	for (uint32_t k = 0; k < data->batchSize; k++)
+	for (std::uint32_t k = 0; k < data->batchSize; k++)
 	{
 		data->pos[k].x += data->vel[k].x * 0.16f;
 		if (data->pos[k].x > 100)

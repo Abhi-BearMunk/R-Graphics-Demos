@@ -4,7 +4,7 @@ namespace R
 {
 	namespace Job
 	{
-		typedef void Entrypoint(void* param, uint32_t tid);
+		typedef void Entrypoint(void* param, std::uint32_t tid);
 		class JobSystem
 		{
 		public:
@@ -21,7 +21,7 @@ namespace R
 			union JobPriorityOrAffinity
 			{
 				JobPriority priority;
-				uint32_t affinity;
+				std::uint32_t affinity;
 			};
 
 			struct JobCounter
@@ -45,7 +45,7 @@ namespace R
 			/// </summary>
 			/// <param name="aDesc"> an array of jobs </param>
 			/// <param name="nJobs"> num jobs </param>
-			void KickJobsWithPriority(const JobDesc* aDesc, uint32_t nJobs);
+			void KickJobsWithPriority(const JobDesc* aDesc, std::uint32_t nJobs);
 
 			/// <summary>
 			/// Kick jobs which are locked to threads
@@ -53,7 +53,7 @@ namespace R
 			/// </summary>
 			/// <param name="aDesc"> an array of jobs </param>
 			/// <param name="nJobs"> num jobs </param>
-			void KickJobsWithAffinity(const JobDesc* aDesc, uint32_t nJobs);
+			void KickJobsWithAffinity(const JobDesc* aDesc, std::uint32_t nJobs);
 
 			/// <summary>
 			/// Wait for a given counter to become '0'
@@ -69,7 +69,7 @@ namespace R
 			/// </summary>
 			/// <param name="aDesc"> an array of jobs </param>
 			/// <param name="nJobs"> num jobs </param>
-			void KickJobsWithPriorityAndWait(const JobDesc* aDesc, uint32_t nJobs);
+			void KickJobsWithPriorityAndWait(const JobDesc* aDesc, std::uint32_t nJobs);
 
 			/// <summary>
 			/// Check desc of KickJobsWithAffinity(...) and KickJobsWithPriorityAndWait(...)
@@ -77,9 +77,9 @@ namespace R
 			/// <param name="aDesc"> an array of jobs </param>
 			/// <param name="nJobs"></param>
 			/// <param name="nJobs"> num jobs </param>
-			void KickJobsWithAffinityAndWait(const JobDesc* aDesc, uint32_t nJobs);
+			void KickJobsWithAffinityAndWait(const JobDesc* aDesc, std::uint32_t nJobs);
 
-			inline uint32_t GetNumWorkers() { return static_cast<uint32_t>(m_threadPool.size()); }
+			inline std::uint32_t GetNumWorkers() { return static_cast<std::uint32_t>(m_threadPool.size()); }
 		private:
 			std::queue<JobDesc>					m_highPriorityJobs;
 			std::queue<JobDesc>					m_medPriorityJobs;
@@ -89,12 +89,12 @@ namespace R
 			std::condition_variable				m_wakeSleepingThread;
 			std::vector<std::thread>			m_threadPool; // TODO : Change to windows threads to be able to set affinity
 #ifdef _DEBUG
-			std::vector<uint32_t>				m_threadJobs;
+			std::vector<std::uint32_t>				m_threadJobs;
 #endif // _DEBUG
 			std::atomic<bool>					m_stopRunning = false;
-			void ProcessJobs(uint32_t tid);
+			void ProcessJobs(std::uint32_t tid);
 			bool SharedJobsAvailable();
-			bool LockedJobsAvailable(uint32_t tid);
+			bool LockedJobsAvailable(std::uint32_t tid);
 		};
 	}
 }

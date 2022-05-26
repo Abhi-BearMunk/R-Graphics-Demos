@@ -160,6 +160,7 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="Rendering\BasePass.h" />
     <ClInclude Include="Rendering\FrameResource.h" />
+    <ClInclude Include="Rendering\PrimitivesGenerator.h" />
     <ClInclude Include="Rendering\RenderContext.h" />
     <ClInclude Include="Rendering\GraphicsUtils.h" />
     <ClInclude Include="Rendering\Renderables.h" />
@@ -181,6 +182,7 @@
     <ClCompile Include="R-Graphics-Demos.cpp" />
     <ClCompile Include="Rendering\BasePass.cpp" />
     <ClCompile Include="Rendering\FrameResource.cpp" />
+    <ClCompile Include="Rendering\PrimitivesGenerator.cpp" />
     <ClCompile Include="Rendering\RenderableManager.cpp" />
     <ClCompile Include="Rendering\RenderContext.cpp" />
     <ClCompile Include="Rendering\GraphicsUtils.cpp" />

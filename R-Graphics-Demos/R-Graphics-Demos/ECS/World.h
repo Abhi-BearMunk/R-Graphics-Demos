@@ -4,21 +4,21 @@ namespace R
 {
 	namespace ECS
 	{
-		constexpr uint32_t MAX_ENTITIES_PER_ARCHETYPE = 1 << 24; // A little over 15 million
-		constexpr uint32_t MAX_COMPONENTS = 64;
+		constexpr std::uint32_t MAX_ENTITIES_PER_ARCHETYPE = 1 << 24; // A little over 15 million
+		constexpr std::uint32_t MAX_COMPONENTS = 64;
 
 		struct Entity
 		{
 		public:
-			uint64_t signature;
-			uint32_t index;
+			std::uint64_t signature;
+			std::uint32_t index;
 		};
 
 		template<size_t numComps>
 		struct Interest
 		{
 			void* ppComps[numComps];
-			uint32_t entityCount;
+			std::uint32_t entityCount;
 		};
 
 		/// <summary>
@@ -55,7 +55,7 @@ namespace R
 			template<typename... Components>
 			void RegisterArchetype()
 			{
-				uint64_t signature = GenerateSignature<Components...>();
+				std::uint64_t signature = GenerateSignature<Components...>();
 				// Register Archetype should be called only once per component combination
 				assert(m_signatureCounts.find(signature) == m_signatureCounts.end());
 				m_signatureCounts[signature] = 0;
@@ -65,11 +65,11 @@ namespace R
 			template<typename... Components>
 			Entity CreateEntity(const Components&... t)
 			{
-				uint64_t signature = GenerateSignature<Components...>();
+				std::uint64_t signature = GenerateSignature<Components...>();
 				auto it = m_signatureCounts.find(signature);
 				// Archetype should already be registered
 				assert(it != m_signatureCounts.end());
-				uint32_t index = it->second;
+				std::uint32_t index = it->second;
 				// Add each component to the appropriate array
 				(SetComponentAtIndex<Components>(signature, index, t), ...);
 				// Increment count
@@ -94,8 +94,8 @@ namespace R
 			void InterestedIn(std::vector<Interest<sizeof...(Components)>>& interests)
 			{
 				assert(interests.size() == 0);
-				uint64_t signature = GenerateSignature<Components...>();
-				uint32_t numComponents = sizeof...(Components);
+				std::uint64_t signature = GenerateSignature<Components...>();
+				std::uint32_t numComponents = sizeof...(Components);
 				// TODO: Could be improved with a tree
 				for (auto& it : m_signatureCounts)
 				{
@@ -111,34 +111,34 @@ namespace R
 
 		private:
 			template<typename T>
-			void InterestedInHelper(void** ppComps, int& i, uint64_t signature)
+			void InterestedInHelper(void** ppComps, int& i, std::uint64_t signature)
 			{
 				ppComps[i] = m_componentArrays[T::uid][signature].ptr;
 				i++;
 			}
 
 			template<typename... T>
-			uint64_t GenerateSignature()
+			std::uint64_t GenerateSignature()
 			{
-				uint64_t signature = 0;
+				std::uint64_t signature = 0;
 				(GenerateSignatureHelper<T>(signature), ...);
 				return signature;
 			}
 
 			template<typename T>
-			void GenerateSignatureHelper(uint64_t& signature)
+			void GenerateSignatureHelper(std::uint64_t& signature)
 			{
 				signature |= T::uid;
 			}
 
 			template<typename T>
-			void InitializeComponentArrayForSignature(uint64_t signature)
+			void InitializeComponentArrayForSignature(std::uint64_t signature)
 			{
 				m_componentArrays[T::uid][signature] = { sizeof(T) , malloc(sizeof(T) * MAX_ENTITIES_PER_ARCHETYPE) };
 			}
 
 			template<typename T>
-			void SetComponentAtIndex(uint64_t signature, uint32_t index, const T& value = {})
+			void SetComponentAtIndex(std::uint64_t signature, std::uint32_t index, const T& value = {})
 			{
 				reinterpret_cast<T*>(m_componentArrays[T::uid][signature].ptr)[index] = value;
 			}
@@ -154,8 +154,8 @@ namespace R
 				}
 			}
 
-			std::unordered_map<uint64_t, uint32_t>		m_signatureCounts;
-			std::unordered_map<uint64_t, SOAGeneric>	m_componentArrays[MAX_COMPONENTS + 1]; // just to make things easy, there is no component with ID 0
+			std::unordered_map<std::uint64_t, std::uint32_t>		m_signatureCounts;
+			std::unordered_map<std::uint64_t, SOAGeneric>	m_componentArrays[MAX_COMPONENTS + 1]; // just to make things easy, there is no component with ID 0
 		};
 	}
 }

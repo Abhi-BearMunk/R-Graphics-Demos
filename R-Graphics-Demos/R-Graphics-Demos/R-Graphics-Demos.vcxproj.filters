@@ -89,6 +89,9 @@
     <ClInclude Include="Rendering\RenderableManager.h">
       <Filter>Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="Rendering\PrimitivesGenerator.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="R-Graphics-Demos.cpp">
@@ -122,6 +125,9 @@
       <Filter>Rendering</Filter>
     </ClCompile>
     <ClCompile Include="Rendering\RenderableManager.cpp">
+      <Filter>Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\PrimitivesGenerator.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
   </ItemGroup>

@@ -6,7 +6,7 @@ namespace R
 {
     namespace Rendering
     {
-        constexpr uint32_t FrameBuffersCount = 3;
+        constexpr std::uint32_t FrameBuffersCount = 3;
 
         inline std::string HrToString(HRESULT hr)
         {
