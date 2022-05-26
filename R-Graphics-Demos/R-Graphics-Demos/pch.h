@@ -45,3 +45,17 @@
 #include <vector>
 #include <queue>
 #include <unordered_map>
+
+#define DEL_DEFAULT_CTOR(X) X() = delete;
+#define DEL_COPY_CTOR(X) X(X&) = delete; \
+X& operator = (const X&) = delete; 
+#define DEL_MOVE_CTOR(X) X(X&&) = delete; \
+X& operator = (X&&) = delete; 
+
+#define DEL_DEFAULT_COPY_MOVE_CTORS(X) DEL_DEFAULT_CTOR(X) \
+DEL_COPY_CTOR(X) \
+DEL_MOVE_CTOR(X)
+
+#define SIZE_OF_16(x) sizeof(x) / sizeof(uint16_t)
+#define SIZE_OF_32(x) sizeof(x) / sizeof(uint32_t)
+#define SIZE_OF_64(x) sizeof(x) / sizeof(uint64_t)

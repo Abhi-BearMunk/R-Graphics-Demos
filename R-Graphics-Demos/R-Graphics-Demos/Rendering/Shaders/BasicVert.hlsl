@@ -1,6 +1,6 @@
 cbuffer Renderable : register(b0)
 {
-    float2 offset;
+    float4x4 mat;
 };
 
 struct VertexIn
@@ -18,7 +18,7 @@ struct VertexOut
 VertexOut main(VertexIn vert)
 {
     VertexOut vout;
-    vout.pos = vert.pos + float4(offset, 0, 0);
+    vout.pos = mul(vert.pos, mat);
     vout.uv = vert.uv;
     return vout;
 }

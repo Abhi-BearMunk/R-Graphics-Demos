@@ -56,7 +56,7 @@ void R::Rendering::RenderSystem::Render()
 
 	// ========== Passes ==========
 	// Todo Move this to affinity based job if needed?
-	for (int i = 0; i < m_pJobSystem->GetNumWorkers(); i++)
+	for (uint32_t i = 0; i < m_pJobSystem->GetNumWorkers(); i++)
 	{
 		m_renderContext.GetThreadContext(i)->Reset(m_renderContext.GetFrameIndex());
 		m_renderContext.GetThreadContext(i)->GetCommandList()->RSSetViewports(1, m_renderContext.GetViewPort());

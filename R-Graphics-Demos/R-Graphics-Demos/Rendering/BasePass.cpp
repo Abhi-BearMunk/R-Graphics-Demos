@@ -9,13 +9,13 @@ R::Rendering::BasePass::BasePass(RenderContext* globalContext, Job::JobSystem* j
         m_jobDescs[i].jobFunc = &BasePass::JobFunc;
         m_jobDescs[i].param = &m_jobDatas[i];
         m_jobDescs[i].pCounter = &m_jobCounter;
-        m_jobDatas[i].globalRenderContext = m_pRenderContext;
-        m_jobDatas[i].threadRenderContextArr = m_pRenderContext->GetThreadContext(0);
+        m_jobDatas[i].basePass = this;
     }
 }
 
 R::Rendering::BasePass::~BasePass()
 {
+    WaitForCompletion();
     delete[] m_jobDescs;
     delete[] m_jobDatas;
 }
@@ -28,7 +28,7 @@ void R::Rendering::BasePass::Init(ID3D12GraphicsCommandList* cmdList)
 
 void R::Rendering::BasePass::Update(FrameResource* frameResource, const CD3DX12_CPU_DESCRIPTOR_HANDLE* rtvHandle)
 {
-    for (size_t i = 0; i < m_pJobSystem->GetNumWorkers(); i++)
+    for (uint32_t i = 0; i < m_pJobSystem->GetNumWorkers(); i++)
     {
         auto commandList = m_pRenderContext->GetThreadContext(i)->GetCommandList();
         commandList->SetPipelineState(m_pipelineState.Get());
@@ -40,11 +40,12 @@ void R::Rendering::BasePass::Update(FrameResource* frameResource, const CD3DX12_
         commandList->IASetVertexBuffers(0, 1, &m_vertexBufferView);
     }
 
+    m_currentFrameResource = frameResource;
+
     uint32_t updateBatchSize = std::max(100u, frameResource->GetCount() / 64);
     uint32_t count = 0;
     for (uint32_t i = 0; i < frameResource->GetCount(); i += updateBatchSize)
     {
-        m_jobDatas[count].frameResource = frameResource;
         m_jobDatas[count].startIndex = i;
         m_jobDatas[count].batchSize = std::min(updateBatchSize, frameResource->GetCount() - i);
         count++;
@@ -63,7 +64,7 @@ void R::Rendering::BasePass::SetupRSAndPSO()
 {
     // ROOT SIG
     CD3DX12_ROOT_PARAMETER rp[1];
-    rp[0].InitAsConstants(sizeof(Renderable) / sizeof(float), 0); // b0
+    rp[0].InitAsConstants(SIZE_OF_32(Renderable), 0); // b0
 
     CD3DX12_ROOT_SIGNATURE_DESC rs(_countof(rp), rp);
 
@@ -98,13 +99,16 @@ void R::Rendering::BasePass::SetupRSAndPSO()
         { "TEXCOORD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,  0 },
     };
 
+    auto rasterizerDesc = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    rasterizerDesc.CullMode = D3D12_CULL_MODE_NONE;
+
     // Describe and create the graphics pipeline state objects (PSO).
     D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
     psoDesc.InputLayout = { s_inputElementDesc, _countof(s_inputElementDesc) };
     psoDesc.pRootSignature = m_rootSignature.Get();
     psoDesc.VS = { vertexShaderBlob.data(), vertexShaderBlob.size() };
     psoDesc.PS = { pixelShaderBlob.data(), pixelShaderBlob.size() };
-    psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    psoDesc.RasterizerState = rasterizerDesc;
     psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
     psoDesc.DepthStencilState.DepthEnable = FALSE;
     psoDesc.DepthStencilState.StencilEnable = FALSE;
@@ -133,9 +137,9 @@ void R::Rendering::BasePass::SetupVertexBuffer(ID3D12GraphicsCommandList* cmdLis
         // Define the geometry for a triangle.
         Vertex triangleVertices[] =
         {
-            { { 0.0f, 0.009f * m_pRenderContext->GetAspectRatio(), 0.0f , 1.0f}, { 0.5f, 0.0f, 0.0f, 0.0f } },
-            { { 0.009f, -0.009f * m_pRenderContext->GetAspectRatio(), 0.0f, 1.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },
-            { { -0.009f, -0.009f * m_pRenderContext->GetAspectRatio(), 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } }
+            { { 0.0f, 1.0f, 0.0f , 1.0f}, { 0.5f, 0.0f, 0.0f, 0.0f } },
+            { { 1.0f, -1.0f, 0.0f, 1.0f }, { 1.0f, 1.0f, 0.0f, 0.0f } },
+            { { -1.0f, -1.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 0.0f } }
         };
 
         const UINT vertexBufferSize = sizeof(triangleVertices);
@@ -159,11 +163,26 @@ void R::Rendering::BasePass::JobFunc(void* param, uint32_t tid)
 {
     JobData* data = reinterpret_cast<JobData*>(param);
     Renderable* renderable;
-    auto commandList = data->threadRenderContextArr[tid].GetCommandList();
+    auto commandList = data->basePass->m_pRenderContext->GetThreadContext(tid)->GetCommandList();
+
+    //auto inited = (m_threadInitFlag >> tid) & 1u;
+    //// If job is starting on this thread
+    //if (inited == 0)
+    //{
+    //    m_threadInitFlag += 1u << tid;
+    //    commandList->SetPipelineState(data->basePass->m_pipelineState.Get());
+    //    commandList->SetGraphicsRootSignature(data->basePass->m_rootSignature.Get());
+    //    commandList->OMSetRenderTargets(1, data->basePass->m_currentRtvHandle, FALSE, nullptr);
+
+    //    // Record commands.
+    //    commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    //    commandList->IASetVertexBuffers(0, 1, &data->basePass->m_vertexBufferView);
+    //}
+
     for (uint32_t k = 0; k < data->batchSize; k++)
     {
-        renderable = data->frameResource->GetRenderable(data->startIndex + k);
-        commandList->SetGraphicsRoot32BitConstants(0, 2, renderable, 0);
+        renderable = data->basePass->m_currentFrameResource->GetRenderable(data->startIndex + k);
+        commandList->SetGraphicsRoot32BitConstants(0, SIZE_OF_32(Renderable), renderable, 0);
         commandList->DrawInstanced(3, 1, 0, 0);
     }
 }

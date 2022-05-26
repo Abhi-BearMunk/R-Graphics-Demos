@@ -79,7 +79,7 @@ namespace R
 			/// <param name="nJobs"> num jobs </param>
 			void KickJobsWithAffinityAndWait(const JobDesc* aDesc, uint32_t nJobs);
 
-			inline size_t GetNumWorkers() { return m_threadPool.size(); }
+			inline uint32_t GetNumWorkers() { return static_cast<uint32_t>(m_threadPool.size()); }
 		private:
 			std::queue<JobDesc>					m_highPriorityJobs;
 			std::queue<JobDesc>					m_medPriorityJobs;

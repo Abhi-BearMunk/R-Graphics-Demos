@@ -20,16 +20,21 @@ namespace R
 		private:
 			static void UpdateJobFunc(void* param, uint32_t tid);
 
+			struct JobConstData
+			{
+				FrameResource* frameResource;
+				XMFLOAT4X4 matVP;
+			};
 			struct UpdateJobData
 			{
 				ECS::Pos* pos;
-				FrameResource* frameResource;
+				JobConstData* constData;
 				uint32_t startIndex;
 				uint32_t batchSize;
 			};
 
 			Job::JobSystem* const						m_pJobSystem;
-
+			JobConstData								m_jobConstData;
 			// Renderable updates
 			std::vector<ECS::Interest<1>>				m_entities;
 			UpdateJobData*								m_updateJobDatas = new UpdateJobData[ECS::MAX_ENTITIES_PER_ARCHETYPE];

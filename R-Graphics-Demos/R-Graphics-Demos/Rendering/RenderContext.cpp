@@ -8,7 +8,7 @@ namespace R
 		RenderContext::RenderContext(const uint32_t width, const uint32_t height, const HWND windowHandle, const uint32_t threadPoolSize)
             :m_width(width), 
             m_height(height), 
-            m_frameIndex(1), 
+            m_frameIndex(FrameBuffersCount - 1), 
             m_frameNumber(0), 
             m_numWorkerThreads(threadPoolSize),
             m_threadRenderContexts(reinterpret_cast<ThreadContext*>(operator new[](sizeof(ThreadContext)* threadPoolSize))),

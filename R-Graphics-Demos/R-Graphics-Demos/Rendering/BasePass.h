@@ -12,6 +12,7 @@ namespace R
 	{
 		class BasePass
 		{
+			friend class BasePass;
 		public:
 			BasePass(RenderContext* globalContext, Job::JobSystem* jobSystem);
 			~BasePass();
@@ -23,20 +24,19 @@ namespace R
 			void SetupVertexBuffer(ID3D12GraphicsCommandList* cmdList);
 			struct JobData
 			{
-				RenderContext* globalRenderContext;
-				ThreadRenderContext<FrameBuffersCount>* threadRenderContextArr;
-				FrameResource* frameResource;
+				BasePass* basePass;
 				uint32_t startIndex;
 				uint32_t batchSize;
 			};
+
+			RenderContext*								m_pRenderContext;
+			FrameResource*								m_currentFrameResource;
 
 			Job::JobSystem*								m_pJobSystem;
 			Job::JobSystem::JobCounter					m_jobCounter;
 			JobData*									m_jobDatas = new JobData[ECS::MAX_ENTITIES_PER_ARCHETYPE];
 			Job::JobSystem::JobDesc*					m_jobDescs = new Job::JobSystem::JobDesc[ECS::MAX_ENTITIES_PER_ARCHETYPE];
 			static void JobFunc(void* param, uint32_t tid);
-
-			RenderContext*								m_pRenderContext;
 
 			ComPtr<ID3D12RootSignature>					m_rootSignature;
 			ComPtr<ID3D12PipelineState>					m_pipelineState;

@@ -11,14 +11,10 @@ namespace R
 		class ThreadRenderContext
 		{
 		public:
-			ThreadRenderContext(ID3D12Device* device, const std::wstring& name, ID3D12PipelineState* defaultPSO = nullptr);
+			explicit ThreadRenderContext(ID3D12Device* device, const std::wstring& name, ID3D12PipelineState* defaultPSO = nullptr);
 			~ThreadRenderContext();
 
-			ThreadRenderContext()											= delete;
-			ThreadRenderContext(ThreadRenderContext&)						= delete;
-			ThreadRenderContext& operator = (const ThreadRenderContext&)	= delete;
-			ThreadRenderContext(ThreadRenderContext&&)						= delete;
-			ThreadRenderContext& operator = (ThreadRenderContext&&)			= delete;
+			DEL_DEFAULT_COPY_MOVE_CTORS(ThreadRenderContext)
 
 			inline ID3D12GraphicsCommandList* GetCommandList() { return m_commandList.Get(); }
 			void Reset(uint32_t index, ID3D12PipelineState* initialState = nullptr);
@@ -51,11 +47,6 @@ template<size_t NumBuffers>
 R::Rendering::ThreadRenderContext<NumBuffers>::~ThreadRenderContext()
 {
 	R_LOG_DEBUG(L"Destroying Allocator {}", m_name.c_str());
-	//for (size_t i = 0; i < NumBuffers; i++)
-	//{
-	//	m_commandAllocator[i].Reset();
-	//}
-	//m_commandList.Reset();
 }
 
 template<size_t NumBuffers>

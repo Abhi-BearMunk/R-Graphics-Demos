@@ -18,6 +18,9 @@ R::Test::MoveSystem* mv;
 R::Rendering::RenderSystem* rs;
 R::Rendering::RenderableManager* rm;
 
+XMFLOAT3 UP{ 0, 1, 0 };
+XMFLOAT4 RQuat, LQuat;
+
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
 {
@@ -26,22 +29,22 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
     R::Utils::Logger logger;
     world.RegisterArchetype<R::ECS::Pos, R::Test::Velocity>();
     world.RegisterArchetype<R::ECS::Pos, R::Test::Velocity, Health>();
-    auto e1 = world.CreateEntity<R::ECS::Pos, R::Test::Velocity, Health>({ 0.75f, 0.37f, 0.0f }, { 0.02f, 0.0f, 0.0f }, { 100 });
-    auto e2 = world.CreateEntity<R::ECS::Pos, R::Test::Velocity>({ -0.20f, 0.0f, 0.0f }, { -0.02f, 0.0f, 0.0f });
-    auto e3 = world.CreateEntity<R::ECS::Pos, R::Test::Velocity, Health>({ 2.10f, -0.10f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 50 });
-    auto e4 = world.CreateEntity<R::ECS::Pos, R::Test::Velocity, Health>({ 0.643f, -0.67f, 0.0f }, { -0.03f, 0.0f, 0.0f }, { 75 });
-    auto e5 = world.CreateEntity<R::ECS::Pos, R::Test::Velocity>({ 0.1f, 0.10f, 0.0f }, { 0.10f, 0.0f, 0.0f });
-    uint32_t count = 40000;
+    auto e1 = world.CreateEntity<R::ECS::Pos, R::Test::Velocity, Health>({ 0.0f, 0.0f, 10.0f }, { 2.f, 0.0f, 0.0f }, { 100 });
+    auto e2 = world.CreateEntity<R::ECS::Pos, R::Test::Velocity>({ -0.20f, 0.0f, 5.0f }, { -0.02f, 0.0f, 0.0f });
+    auto e3 = world.CreateEntity<R::ECS::Pos, R::Test::Velocity, Health>({ 2.10f, -0.10f, 10.0f }, { 0.0f, 0.0f, 0.0f }, { 50 });
+    auto e4 = world.CreateEntity<R::ECS::Pos, R::Test::Velocity, Health>({ 0.643f, -0.67f, 20.0f }, { -0.03f, 0.0f, 0.0f }, { 75 });
+    auto e5 = world.CreateEntity<R::ECS::Pos, R::Test::Velocity>({ 0.1f, 0.10f, 40.0f }, { 0.10f, 0.0f, 0.0f });
+    uint32_t count = 50000;
     for (uint32_t i = 0; i < count; i++)
     {
         R::ECS::Pos p;
-        p.x = (float)(rand() % 100) / 50.0f - 1.f;
-        p.y = (float)(rand() % 100) / 50.0f - 1.f;
-        p.z = (float)(rand() % 100) / 50.0f - 1.f;
+        p.x = (float)(rand() % 100) - 50;
+        p.y = (float)(rand() % 100) - 50;
+        p.z = (float)(rand() % 100);
         R::Test::Velocity v;
-        v.x = (float)(rand() % 100) / 500.0f - 0.1f;
-        v.y = (float)(rand() % 100) / 500.0f - 0.1f;
-        v.z = (float)(rand() % 100) / 500.0f - 0.1f;
+        v.x = (float)(rand() % 10) / 20.0f - 0.25f;
+        v.y = (float)(rand() % 10) / 20.0f - 0.25f;
+        v.z = (float)(rand() % 10) / 20.0f - 0.25f;
         if (i < count / 2)
         {
             world.CreateEntity<R::ECS::Pos, R::Test::Velocity, Health>(p, v, { 100 });
@@ -99,6 +102,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
     auto rendMan = R::Rendering::RenderableManager(world, jobSys);
     rm = &rendMan;
 
+    XMStoreFloat4(&RQuat, XMQuaternionRotationAxis(XMLoadFloat3(&UP), 2.f * XM_PI / 180.f));
+    XMStoreFloat4(&LQuat, XMQuaternionRotationAxis(XMLoadFloat3(&UP), -2.f * XM_PI / 180.f));
+
+
     // Main sample loop.
     MSG msg = {};
     while (msg.message != WM_QUIT)
@@ -117,10 +124,12 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
     return static_cast<char>(msg.wParam);
 }
 
+
 // Main message handler for the sample.
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     //DXSample* pSample = reinterpret_cast<DXSample*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+
 
     switch (message)
     {
@@ -133,10 +142,38 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
     return 0;
 
     case WM_KEYDOWN:
-        /*if (pSample)
+        // TODO :: Very Hacky, but still very performant;
+        XMVECTOR p = XMLoadFloat3(&rs->GetRenderContext()->GetCamera()->position);
+        XMVECTOR f = XMLoadFloat3(&rs->GetRenderContext()->GetCamera()->forward);
+        XMVECTOR r = XMLoadFloat3(&rs->GetRenderContext()->GetCamera()->right);
+
+        switch (wParam)
         {
-            pSample->OnKeyDown(static_cast<UINT8>(wParam));
-        }*/
+        case 0x57:  // W
+            XMStoreFloat3(&rs->GetRenderContext()->GetCamera()->position, XMVectorAdd(p, f));
+            break;
+        case 0x41:  // A
+            XMStoreFloat3(&rs->GetRenderContext()->GetCamera()->position, XMVectorSubtract(p, r));
+            break;
+        case 0x53:  // S
+            XMStoreFloat3(&rs->GetRenderContext()->GetCamera()->position, XMVectorSubtract(p, f));
+            break;
+        case 0x44:  // D
+            XMStoreFloat3(&rs->GetRenderContext()->GetCamera()->position, XMVectorAdd(p, r));
+            break;
+        case 0x51:  // Q
+            XMStoreFloat3(&rs->GetRenderContext()->GetCamera()->forward, XMVector3Rotate(f, XMLoadFloat4(&RQuat)));
+            XMStoreFloat3(&rs->GetRenderContext()->GetCamera()->right, XMVector3Rotate(r, XMLoadFloat4(&RQuat)));
+
+            break;
+        case 0x45:  // E
+            XMStoreFloat3(&rs->GetRenderContext()->GetCamera()->forward, XMVector3Rotate(f, XMLoadFloat4(&LQuat)));
+            XMStoreFloat3(&rs->GetRenderContext()->GetCamera()->right, XMVector3Rotate(r, XMLoadFloat4(&LQuat)));
+
+            break;
+        default:
+            break;
+        }
         return 0;
 
     case WM_KEYUP:

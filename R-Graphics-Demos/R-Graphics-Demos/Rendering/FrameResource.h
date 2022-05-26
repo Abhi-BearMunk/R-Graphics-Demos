@@ -26,8 +26,9 @@ namespace R
 
 			inline Renderable* const GetRenderable(uint32_t index) { assert(index < ECS::MAX_ENTITIES_PER_ARCHETYPE); return &m_renderables[index]; }
 			inline FrameResourceState GetState() const { return m_state; }
-			inline void SetCount(const uint32_t& count) { m_count = count; }
+			
 			inline uint32_t GetCount() { return m_count; }
+			inline void SetCount(const uint32_t& count) { m_count = count; }
 		private:
 			Renderable*									m_renderables = new Renderable[ECS::MAX_ENTITIES_PER_ARCHETYPE]; 
 			uint32_t									m_count;

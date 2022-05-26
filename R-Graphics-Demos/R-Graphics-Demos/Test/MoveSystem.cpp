@@ -56,15 +56,20 @@ void R::Test::MoveSystem::JobFunc(void* param, uint32_t tid)
 	for (uint32_t k = 0; k < data->batchSize; k++)
 	{
 		data->pos[k].x += data->vel[k].x * 0.16f;
-		if (data->pos[k].x > 1)
-			data->pos[k].x -= 2.f;
-		if (data->pos[k].x < -1)
-			data->pos[k].x += 2.f;
+		if (data->pos[k].x > 100)
+			data->pos[k].x -= 200.f;
+		if (data->pos[k].x < -100)
+			data->pos[k].x += 200.f;
 		data->pos[k].y += data->vel[k].y * 0.16f;
-		if (data->pos[k].y > 1)
-			data->pos[k].y -= 2.f;
-		if (data->pos[k].y < -1)
-			data->pos[k].y += 2.f;
+		if (data->pos[k].y > 100)
+			data->pos[k].y -= 200.f;
+		if (data->pos[k].y < -100)
+			data->pos[k].y += 200.f;
+		data->pos[k].z += data->vel[k].z * 0.16f;
+		if (data->pos[k].z > 100)
+			data->pos[k].z -= 200.f;
+		if (data->pos[k].z < -100)
+			data->pos[k].z += 200.f;
 	}
 }
 

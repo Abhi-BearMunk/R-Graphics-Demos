@@ -10,17 +10,24 @@ namespace R
 	namespace Rendering
 	{
 		using ThreadContext = ThreadRenderContext<FrameBuffersCount>;
+		struct Camera
+		{
+			XMFLOAT3 position { 0.f, 0.f, 0.f};
+			XMFLOAT4 orientation { 0.f, 0.f, 0.f, 1.f };
+			XMFLOAT3 right{ 1.f, 0.f, 0.f };
+			XMFLOAT3 up{ 0.f, 1.f, 0.f };
+			XMFLOAT3 forward{ 0.f, 0.f, 1.f };
+			float nearPlane = 0.01f;
+			float farPlane = 1000.0f;
+			float fov = 60.0f;
+		};
 		class RenderContext
 		{
 		public:
-			RenderContext(const uint32_t width, const uint32_t height, const HWND windowHandle, const uint32_t threadPoolSize);
+			explicit RenderContext(const uint32_t width, const uint32_t height, const HWND windowHandle, const uint32_t threadPoolSize);
 			~RenderContext();
 
-			RenderContext()										= delete;
-			RenderContext(RenderContext&)						= delete;
-			RenderContext& operator = (const RenderContext&)	= delete;
-			RenderContext(RenderContext&&)						= delete;
-			RenderContext& operator = (RenderContext&&)			= delete;
+			DEL_DEFAULT_COPY_MOVE_CTORS(RenderContext)
 	
 			inline ID3D12Device*				GetDevice()							const	{ return m_device.Get(); }
 			inline ID3D12CommandQueue*			GetCommandQueue()					const	{ return m_commandQueue.Get(); }
@@ -37,6 +44,7 @@ namespace R
 			inline ThreadContext* 				GetThreadContext(uint32_t index)	const	{ return &m_threadRenderContexts[index]; }
 			inline ID3D12CommandList* const*	GetCommandLists()					const	{ return CommandListCast(m_threadCommandLists); }
 			inline FrameResource* 				GetCurrentFrameResource()					{ return &m_frameResources[m_frameIndex]; }
+			inline Camera*						GetCamera()									{ return &m_camera; }
 
 			inline void							AdvanceFrame()								{ m_frameIndex = (m_frameIndex + 1) % FrameBuffersCount; }
 
@@ -69,6 +77,9 @@ namespace R
 			// Frame Resources
 			uint32_t									m_frameIndex;
 			FrameResource								m_frameResources[FrameBuffersCount];
+
+			// Camera
+			Camera										m_camera;
 		};
 	}
 }

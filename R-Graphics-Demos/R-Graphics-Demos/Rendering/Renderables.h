@@ -1,12 +1,12 @@
 #pragma once
+#include "pch.h"
 namespace R
 {
 	namespace Rendering
 	{
 		struct Renderable
 		{
-			float x;
-			float y;
+			XMFLOAT4X4 matrix;
 		};
 	}
 }
