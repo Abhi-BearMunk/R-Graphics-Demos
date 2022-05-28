@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "BasePass.h"
 
-R::Rendering::BasePass::BasePass(Job::JobSystem* jobSystem)
-	:m_pJobSystem(jobSystem)
+R::Rendering::BasePass::BasePass(RenderContext* renderContext, Job::JobSystem* jobSystem)
+	:m_pJobSystem(jobSystem), m_jobConstData(renderContext)
 {
     for (int i = 0; i < ECS::MAX_ENTITIES_PER_ARCHETYPE; i++)
     {
@@ -20,19 +20,22 @@ R::Rendering::BasePass::~BasePass()
     delete[] m_jobDatas;
 }
 
-void R::Rendering::BasePass::Init(RenderContext* renderContext, ID3D12GraphicsCommandList* cmdList)
+void R::Rendering::BasePass::Init(ID3D12GraphicsCommandList* cmdList)
 {
-    SetupRSAndPSO(renderContext);
-    SetupVertexBuffer(renderContext, cmdList);
+    SetupRSAndPSO();
+    SetupVertexBuffer(cmdList);
 }
 
-void R::Rendering::BasePass::Update(RenderContext* renderContext)
+void R::Rendering::BasePass::Update()
 {
+    auto renderContext = m_jobConstData.renderContext;
     for (std::uint32_t i = 0; i < m_pJobSystem->GetNumWorkers(); i++)
     {
         auto commandList = renderContext->GetThreadContext(i)->GetCommandList();
         commandList->SetPipelineState(m_pipelineState.Get());
         commandList->SetGraphicsRootSignature(m_rootSignature.Get());
+        ID3D12DescriptorHeap* pHeaps[] = { renderContext->GetCBVSRVUAVDescriptorHeap() };
+        commandList->SetDescriptorHeaps(_countof(pHeaps), pHeaps);
         auto rtvHandle = renderContext->GetCurrentRTVHandle();
         auto dsvHandle = renderContext->GetCurrentDSVHandle();
         commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
@@ -64,24 +67,50 @@ void R::Rendering::BasePass::WaitForCompletion()
     m_pJobSystem->WaitForCounter(&m_jobCounter);
 }
 
-void R::Rendering::BasePass::SetupRSAndPSO(RenderContext* renderContext)
+void R::Rendering::BasePass::SetupRSAndPSO()
 {
+    auto renderContext = m_jobConstData.renderContext;
     // ROOT SIG
-    CD3DX12_ROOT_PARAMETER rp[2];
-    rp[0].InitAsConstants(SIZE_OF_32(Renderable), 0); // b0
-    rp[1].InitAsConstants(SIZE_OF_32(XMFLOAT3), 1); // b1
+    D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
 
-    CD3DX12_ROOT_SIGNATURE_DESC rs(_countof(rp), rp);
+    // This is the highest version the sample supports. If CheckFeatureSupport succeeds, the HighestVersion returned will not be greater than this.
+    featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;
 
-    rs.Init(2, rp, 0, nullptr,
-        D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
-        | D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS
-        | D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS
-        | D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS);
+    if (FAILED(renderContext->GetDevice()->CheckFeatureSupport(D3D12_FEATURE_ROOT_SIGNATURE, &featureData, sizeof(featureData))))
+    {
+        featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
+    }
+
+    CD3DX12_DESCRIPTOR_RANGE1 ranges[1]; // Perfomance TIP: Order from most frequent to least frequent.
+    ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);    // frequently changed diffuse + normal textures - using registers t1 and t2.
+    //ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);    // 1 frequently changed constant buffer.
+    //ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);                                                // 1 infrequently changed shadow texture - starting in register t0.
+    //ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0);                                            // static samplers.
+
+    CD3DX12_ROOT_PARAMETER1 rootParameters[3];
+    rootParameters[0].InitAsConstants(SIZE_OF_32(Renderable), 0, 0, D3D12_SHADER_VISIBILITY_VERTEX); // b0
+    rootParameters[1].InitAsConstants(SIZE_OF_32(XMFLOAT3), 1, 0, D3D12_SHADER_VISIBILITY_PIXEL); // b1
+    rootParameters[2].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
+    //rootParameters[3].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
+
+    D3D12_STATIC_SAMPLER_DESC samplerDesc = {};
+    samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+    samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+    samplerDesc.MaxAnisotropy = 16;
+    samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+    samplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
+    samplerDesc.MinLOD = 0;
+    samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+    samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+    CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
+    rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 1, &samplerDesc, D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
 
     ComPtr<ID3DBlob> signature;
     ComPtr<ID3DBlob> error;
-    HRESULT hr = D3D12SerializeRootSignature(&rs, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
+    HRESULT hr = D3DX12SerializeVersionedRootSignature(&rootSignatureDesc, featureData.HighestVersion, &signature, &error);
     if (FAILED(hr))
     {
         R_LOG_ERROR("Failed to initialize root signature for Draw Triange Pass");
@@ -90,9 +119,40 @@ void R::Rendering::BasePass::SetupRSAndPSO(RenderContext* renderContext)
             R_LOG_ERROR(reinterpret_cast<const char*>(error->GetBufferPointer()));
         }
     }
+    LogErrorIfFailed(renderContext->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature)));
+    NAME_D3D12_COMPTR(m_rootSignature);
 
-    LogErrorIfFailed(renderContext->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
-            IID_PPV_ARGS(m_rootSignature.ReleaseAndGetAddressOf())));
+    //CD3DX12_DESCRIPTOR_RANGE descRange[2];
+
+    //descRange[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0); // t0
+    //descRange[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0); // s0
+
+    //CD3DX12_ROOT_PARAMETER rp[4];
+    //rp[0].InitAsConstants(SIZE_OF_32(Renderable), 0); // b0
+    //rp[1].InitAsConstants(SIZE_OF_32(XMFLOAT3), 1); // b1
+
+    //CD3DX12_ROOT_SIGNATURE_DESC rs(_countof(rp), rp);
+
+    //rs.Init(2, rp, 0, nullptr,
+    //    D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
+    //    | D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS
+    //    | D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS
+    //    | D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS);
+
+    //ComPtr<ID3DBlob> signature;
+    //ComPtr<ID3DBlob> error;
+    //HRESULT hr = D3D12SerializeRootSignature(&rs, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
+    //if (FAILED(hr))
+    //{
+    //    R_LOG_ERROR("Failed to initialize root signature for Draw Triange Pass");
+    //    if (error)
+    //    {
+    //        R_LOG_ERROR(reinterpret_cast<const char*>(error->GetBufferPointer()));
+    //    }
+    //}
+
+    //LogErrorIfFailed(renderContext->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
+    //        IID_PPV_ARGS(m_rootSignature.ReleaseAndGetAddressOf())));
 
     // PSO
     auto vertexShaderBlob = R::Utils::ReadData(L"BasicVert.cso");
@@ -129,8 +189,9 @@ void R::Rendering::BasePass::SetupRSAndPSO(RenderContext* renderContext)
             IID_PPV_ARGS(m_pipelineState.ReleaseAndGetAddressOf())));
 }
 
-void R::Rendering::BasePass::SetupVertexBuffer(RenderContext* renderContext, ID3D12GraphicsCommandList* cmdList)
+void R::Rendering::BasePass::SetupVertexBuffer(ID3D12GraphicsCommandList* cmdList)
 {
+    auto renderContext = m_jobConstData.renderContext;
     // Create the vertex buffer.
     {
         // Define the geometry for a triangle.
@@ -181,8 +242,9 @@ void R::Rendering::BasePass::JobFunc(void* param, std::uint32_t tid)
 {
     JobData* data = reinterpret_cast<JobData*>(param);
     Renderable* renderable;
-    auto commandList = data->constData->renderContext->GetThreadContext(tid)->GetCommandList();
-    auto frameResource = data->constData->renderContext->GetCurrentFrameResource();
+    auto renderContext = data->constData->renderContext;
+    auto commandList = renderContext->GetThreadContext(tid)->GetCommandList();
+    auto frameResource = renderContext->GetCurrentFrameResource();
     //auto inited = (m_threadInitFlag >> tid) & 1u;
     //// If job is starting on this thread
     //if (inited == 0)
@@ -202,6 +264,7 @@ void R::Rendering::BasePass::JobFunc(void* param, std::uint32_t tid)
         renderable = frameResource->GetRenderable(data->startIndex + k);
         commandList->SetGraphicsRoot32BitConstants(0, SIZE_OF_32(Renderable), renderable, 0);
         commandList->SetGraphicsRoot32BitConstants(1, SIZE_OF_32(XMFLOAT3), &colors[(data->startIndex + k) % 8], 0);
+        commandList->SetGraphicsRootDescriptorTable(2, renderContext->GetExternalSRVGPUHandle(0));
         commandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
     }
 }

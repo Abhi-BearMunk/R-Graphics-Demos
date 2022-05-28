@@ -15,16 +15,17 @@ namespace R
 		{
 			friend class BasePass;
 		public:
-			BasePass(Job::JobSystem* jobSystem);
+			BasePass(RenderContext* renderContext, Job::JobSystem* jobSystem);
 			~BasePass();
-			void Init(RenderContext* renderContext, ID3D12GraphicsCommandList* cmdList);
-			void Update(RenderContext* renderContext);
+			void Init(ID3D12GraphicsCommandList* cmdList);
+			void Update();
 			void WaitForCompletion();
 		private:
-			void SetupRSAndPSO(RenderContext* renderContext);
-			void SetupVertexBuffer(RenderContext* renderContext, ID3D12GraphicsCommandList* cmdList);
+			void SetupRSAndPSO();
+			void SetupVertexBuffer(ID3D12GraphicsCommandList* cmdList);
 			struct JobConstData
 			{
+				inline JobConstData(RenderContext* _renderContext) : renderContext(_renderContext){}
 				RenderContext* renderContext;
 			};
 

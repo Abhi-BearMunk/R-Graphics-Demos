@@ -33,6 +33,9 @@
     <Filter Include="Rendering\Shaders">
       <UniqueIdentifier>{8d57833b-9cec-45da-bdd6-294a9f6e036a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="AssetManagement">
+      <UniqueIdentifier>{aa2c5e5f-89af-472b-b2e4-d5e3be38552d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -95,6 +98,12 @@
     <ClInclude Include="Rendering\RenderingComponents.h">
       <Filter>Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="Utils\AssetImporter.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\ResourceDatas.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="R-Graphics-Demos.cpp">
@@ -132,6 +141,9 @@
     </ClCompile>
     <ClCompile Include="Rendering\PrimitivesGenerator.cpp">
       <Filter>Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils\AssetImporter.cpp">
+      <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

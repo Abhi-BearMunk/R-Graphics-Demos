@@ -14,7 +14,9 @@ namespace R
             m_threadRenderContexts(reinterpret_cast<ThreadContext*>(operator new[](sizeof(ThreadContext)* threadPoolSize))),
             m_threadCommandLists(new ID3D12GraphicsCommandList* [threadPoolSize]),
             m_viewport(0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height)),
-            m_scissorRect(0, 0, static_cast<LONG>(width), static_cast<LONG>(height))
+            m_scissorRect(0, 0, static_cast<LONG>(width), static_cast<LONG>(height)),
+            m_externalSrvStartIndex(0),
+            m_externalSrvCount(0)
 		{
             UINT dxgiFactoryFlags = 0;
 
@@ -103,6 +105,8 @@ namespace R
 
                 m_dsvDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
+                // Srv descriptor is created later
+                m_cbvSrvUavDescriptorSize = m_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
             }
 
             // Create the depth stencil.
@@ -137,7 +141,7 @@ namespace R
                         &clearValue,
                         IID_PPV_ARGS(&m_depthStencil[n])));
 
-                    NAME_D3D12_OBJECT(m_depthStencil[n]);
+                    NAME_D3D12_COMPTR_INDEXED(m_depthStencil, n);
 
                     // Create the depth stencil view.
                     m_device->CreateDepthStencilView(m_depthStencil[n].Get(), nullptr, dsvHandle);
@@ -189,7 +193,7 @@ namespace R
                 m_threadRenderContexts[i].~ThreadRenderContext();
             }
             operator delete[](m_threadRenderContexts);
-
+            delete[] m_externalShaderResources;
 #ifdef _DEBUG
             ComPtr<IDXGIDebug1> dxgiDebug;
             if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug))))
@@ -209,6 +213,19 @@ namespace R
                 LogErrorIfFailed(m_fence->SetEventOnCompletion(m_frameNumber, m_eventHandle));
                 WaitForSingleObjectEx(m_eventHandle, INFINITE, FALSE);
             }
+        }
+
+        void RenderContext::CreateCbvSrvUavHeap(std::uint32_t externalSrvCount)
+        {
+            m_externalSrvCount = externalSrvCount;
+            D3D12_DESCRIPTOR_HEAP_DESC cbvSrvHeapDesc = {};
+            cbvSrvHeapDesc.NumDescriptors = m_externalSrvStartIndex + externalSrvCount; // TODO : ...
+            cbvSrvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+            cbvSrvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+            LogErrorIfFailed(m_device->CreateDescriptorHeap(&cbvSrvHeapDesc, IID_PPV_ARGS(&m_cbvSrvUavHeap)));
+            NAME_D3D12_COMPTR(m_cbvSrvUavHeap);
+
+            m_externalShaderResources = new ComPtr<ID3D12Resource>[externalSrvCount];
         }
 
         void RenderContext::GetHardwareAdapter(IDXGIFactory1* pFactory, IDXGIAdapter1** ppAdapter, bool requestHighPerformanceAdapter)

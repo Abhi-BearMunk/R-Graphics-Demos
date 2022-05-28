@@ -1,8 +1,8 @@
 // R-Graphics-Demos.cpp : Defines the entry point for the application.
 //
 #include "pch.h"
-#include "framework.h"
-#include "ECS/World.h"
+//#include "ECS/World.h"
+#include "Utils/AssetImporter.h"
 #include "Test/MoveSystem.h"
 #include "Rendering/RenderSystem.h"
 #include "Rendering/RenderableManager.h"
@@ -65,8 +65,14 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
 
     R::Job::JobSystem jobSys;
 
-    auto moveSys = R::Test::MoveSystem(world, jobSys);
+    R::Test::MoveSystem moveSys(world, jobSys);
     mv = &moveSys;
+
+    R::Utils::AssetImporter assetImporter(jobSys);
+    R::Rendering::TextureID testTex;
+    R::Utils::TextureAssetDesc testDesc{ R::Utils::TextureAssetDesc::E_Albedo, L"D:\\Work\\Github\\R-Graphics-Demos\\R-Graphics-Demos\\R-Graphics-Demos\\Assets\\Textures\\space-crate1-albedo.png", 1, &testTex };
+    R::Utils::TextureAssetDesc assets[] = { testDesc };
+    assetImporter.ImportTextures(1, assets);
 
     // Initialize the window class.
     WNDCLASSEX windowClass = { 0 };
@@ -101,10 +107,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
 
     ShowWindow(m_hwnd, nCmdShow);
 
-    auto rendSys = R::Rendering::RenderSystem(1920, 1080, m_hwnd, world, jobSys);
+    R::Rendering::RenderSystem rendSys(1920u, 1080u, m_hwnd, jobSys, assetImporter.GetResourceData());
     rs = &rendSys;
 
-    auto rendMan = R::Rendering::RenderableManager(world, jobSys);
+    R::Rendering::RenderableManager rendMan(world, jobSys);
     rm = &rendMan;
 
     XMStoreFloat4(&RQuat, XMQuaternionRotationAxis(XMLoadFloat3(&UP), 2.f * XM_PI / 180.f));

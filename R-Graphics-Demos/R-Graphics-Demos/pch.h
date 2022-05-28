@@ -10,7 +10,7 @@
 
 #include <windows.h>
 
-// DX12
+// DX12 Core
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include <DirectXMath.h>
@@ -19,6 +19,10 @@
 #include <dxgidebug.h>
 #endif // DEBUG
 
+// DX12 Helpers
+#include <DirectXTex/DirectXTex/DirectXTex.h>
+
+using Microsoft::WRL::ComPtr;
 
 // SpdLog
 #ifndef SPDLOG_WCHAR_TO_UTF8_SUPPORT
@@ -60,10 +64,16 @@ DEL_MOVE_CTOR(X)
 #define SIZE_OF_32(x) sizeof(x) / sizeof(std::uint32_t)
 #define SIZE_OF_64(x) sizeof(x) / sizeof(std::uint64_t)
 
-#define NAME_D3D12_OBJECT(x) x->SetName(L#x)
+#define _GLUE(a, b) a##b
+#define GLUE(a, b) _GLUE(a, b)
+#define _NAME_WCHAR(x) L#x
+#define NAME_WCHAR(x) _NAME_WCHAR(x)
 
 namespace R
 {
-	constexpr float DegToRad = DirectX::XM_PI / 180.0f;
-	constexpr float RadToDeg = 180.0f / DirectX::XM_PI;
+	namespace Constants
+	{
+		constexpr float DegToRad = DirectX::XM_PI / 180.0f;
+		constexpr float RadToDeg = 180.0f / DirectX::XM_PI;
+	}
 }

@@ -4,7 +4,6 @@
 #include "FrameResource.h"
 #include "ThreadRenderContext.h"
 
-using Microsoft::WRL::ComPtr;
 namespace R
 {
 	namespace Rendering
@@ -29,29 +28,40 @@ namespace R
 
 			DEL_DEFAULT_COPY_MOVE_CTORS(RenderContext)
 	
-			inline ID3D12Device*					GetDevice()								const	{ return m_device.Get(); }
-			inline ID3D12CommandQueue*				GetCommandQueue()						const	{ return m_commandQueue.Get(); }
-			inline ID3D12Resource*					GetCurrentRenderTarget()				const	{ return m_renderTargets[m_frameIndex].Get(); }
-			inline DXGI_FORMAT						GetRenderTargetFormat()					const	{ return DXGI_FORMAT_R8G8B8A8_UNORM; }
-			inline CD3DX12_CPU_DESCRIPTOR_HANDLE	GetCurrentRTVHandle()					const	{ return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_rtvHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_rtvDescriptorSize);}
-			inline ID3D12Resource*					GetCurrentDepthBuffer()					const	{ return m_depthStencil[m_frameIndex].Get(); }
-			inline DXGI_FORMAT						GetDepthBufferFormat()					const	{ return DXGI_FORMAT_D32_FLOAT; }
-			inline CD3DX12_CPU_DESCRIPTOR_HANDLE	GetCurrentDSVHandle()					const	{ return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_dsvHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_dsvDescriptorSize); }
-			inline ID3D12Fence*						GetFence()								const	{ return m_fence.Get(); }
-			inline const CD3DX12_VIEWPORT*			GetViewPort()							const	{ return &m_viewport; }
-			inline const CD3DX12_RECT*				GetScissorRect()						const	{ return &m_scissorRect; }
-			inline IDXGISwapChain3*					GetSwapChain()							const	{ return m_swapChain.Get(); }
-			inline float							GetAspectRatio()						const	{ return m_aspectRatio; }
-			inline std::uint64_t*					GetFrameNumber()								{ return &m_frameNumber; }
-			inline std::uint32_t					GetFrameIndex()							const	{ return m_frameIndex; }
-			inline ThreadContext* 					GetThreadContext(std::uint32_t index)	const	{ return &m_threadRenderContexts[index]; }
-			inline ID3D12CommandList* const*		GetCommandLists()						const	{ return CommandListCast(m_threadCommandLists); }
-			inline FrameResource* 					GetCurrentFrameResource()						{ return &m_frameResources[m_frameIndex]; }
-			inline Camera*							GetCamera()										{ return &m_camera; }
+			inline ID3D12Device*					GetDevice()													const	{ return m_device.Get(); }
+			inline ID3D12CommandQueue*				GetCommandQueue()											const	{ return m_commandQueue.Get(); }
+			inline ID3D12Resource*					GetCurrentRenderTarget()									const	{ return m_renderTargets[m_frameIndex].Get(); }
+			inline DXGI_FORMAT						GetRenderTargetFormat()										const	{ return DXGI_FORMAT_R8G8B8A8_UNORM; }
+			inline CD3DX12_CPU_DESCRIPTOR_HANDLE	GetCurrentRTVHandle()										const	{ return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_rtvHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_rtvDescriptorSize);}
+			inline ID3D12Resource*					GetCurrentDepthBuffer()										const	{ return m_depthStencil[m_frameIndex].Get(); }
+			inline DXGI_FORMAT						GetDepthBufferFormat()										const	{ return DXGI_FORMAT_D32_FLOAT; }
+			inline CD3DX12_CPU_DESCRIPTOR_HANDLE	GetCurrentDSVHandle()										const	{ return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_dsvHeap->GetCPUDescriptorHandleForHeapStart(), m_frameIndex, m_dsvDescriptorSize); }
+			inline CD3DX12_CPU_DESCRIPTOR_HANDLE	GetCBVSRVUAVCPUHandle(std::uint32_t index = 0)				const	{ return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_cbvSrvUavHeap->GetCPUDescriptorHandleForHeapStart(), index, m_cbvSrvUavDescriptorSize); }
+			inline CD3DX12_CPU_DESCRIPTOR_HANDLE	GetExternalSRVCPUHandle(std::uint32_t index = 0)			const	{ return CD3DX12_CPU_DESCRIPTOR_HANDLE(m_cbvSrvUavHeap->GetCPUDescriptorHandleForHeapStart(), m_externalSrvStartIndex + index, m_cbvSrvUavDescriptorSize); }
+			inline CD3DX12_GPU_DESCRIPTOR_HANDLE	GetCBVSRVUAVGPUHandle(std::uint32_t index = 0)				const	{ return CD3DX12_GPU_DESCRIPTOR_HANDLE(m_cbvSrvUavHeap->GetGPUDescriptorHandleForHeapStart(), index, m_cbvSrvUavDescriptorSize); }
+			inline CD3DX12_GPU_DESCRIPTOR_HANDLE	GetExternalSRVGPUHandle(std::uint32_t index = 0)			const	{ return CD3DX12_GPU_DESCRIPTOR_HANDLE(m_cbvSrvUavHeap->GetGPUDescriptorHandleForHeapStart(), m_externalSrvStartIndex + index, m_cbvSrvUavDescriptorSize); }
+			inline ID3D12DescriptorHeap*			GetCBVSRVUAVDescriptorHeap()								const	{ return m_cbvSrvUavHeap.Get(); }
+			inline void								OffsetCBVSRVUAVCPUHandle(
+													CD3DX12_CPU_DESCRIPTOR_HANDLE& handle,
+													std::uint32_t index = 1)									const	{ handle.Offset(index * m_cbvSrvUavDescriptorSize); }
+			inline ID3D12Resource*					GetExternalResource(std::uint32_t index)					const	{ return m_externalShaderResources[index].Get(); }
+			inline ID3D12Resource**					GetExternalResourceAddr(std::uint32_t index)				const	{ return m_externalShaderResources[index].GetAddressOf(); }
+			inline ID3D12Fence*						GetFence()													const	{ return m_fence.Get(); }
+			inline const CD3DX12_VIEWPORT*			GetViewPort()												const	{ return &m_viewport; }
+			inline const CD3DX12_RECT*				GetScissorRect()											const	{ return &m_scissorRect; }
+			inline IDXGISwapChain3*					GetSwapChain()												const	{ return m_swapChain.Get(); }
+			inline float							GetAspectRatio()											const	{ return m_aspectRatio; }
+			inline std::uint64_t*					GetFrameNumber()													{ return &m_frameNumber; }
+			inline std::uint32_t					GetFrameIndex()												const	{ return m_frameIndex; }
+			inline ThreadContext* 					GetThreadContext(std::uint32_t index)						const	{ return &m_threadRenderContexts[index]; }
+			inline ID3D12CommandList* const*		GetCommandLists()											const	{ return CommandListCast(m_threadCommandLists); }
+			inline FrameResource* 					GetCurrentFrameResource()											{ return &m_frameResources[m_frameIndex]; }
+			inline Camera*							GetCamera()															{ return &m_camera; }
 
-			inline void								AdvanceFrame()									{ m_frameIndex = (m_frameIndex + 1) % FrameBuffersCount; }
-
+			inline void								AdvanceFrame()														{ m_frameIndex = (m_frameIndex + 1) % FrameBuffersCount; }
+			
 			void									WaitForGPU();
+			void									CreateCbvSrvUavHeap(std::uint32_t externalSrvCount);
 		private:
 			void GetHardwareAdapter(IDXGIFactory1* pFactory, IDXGIAdapter1** ppAdapter, bool requestHighPerformanceAdapter = false);
 			// API Objects
@@ -71,6 +81,12 @@ namespace R
 			ComPtr<ID3D12Resource>						m_depthStencil[FrameBuffersCount];
 			ComPtr<ID3D12DescriptorHeap>				m_dsvHeap;
 			std::uint32_t								m_dsvDescriptorSize;
+
+			ComPtr<ID3D12Resource>*						m_externalShaderResources;
+			ComPtr<ID3D12DescriptorHeap>				m_cbvSrvUavHeap;
+			std::uint32_t								m_cbvSrvUavDescriptorSize;
+			std::uint32_t								m_externalSrvStartIndex;
+			std::uint32_t								m_externalSrvCount;
 
 			// Synchronization objects.
 			ComPtr<ID3D12Fence>							m_fence;

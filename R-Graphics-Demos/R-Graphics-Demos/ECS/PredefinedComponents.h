@@ -4,6 +4,7 @@ using namespace DirectX;
 // UID -> 1 to 1 << 15
 namespace R
 {
+	using namespace Constants;
 	namespace ECS
 	{
 		struct Pos : public XMFLOAT3
