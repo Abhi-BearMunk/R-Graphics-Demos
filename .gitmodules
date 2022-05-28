@@ -1,0 +1,3 @@
+[submodule "R-Graphics-Demos/R-Graphics-Demos/ThirdParty/DirectXTex"]
+	path = R-Graphics-Demos/R-Graphics-Demos/ThirdParty/DirectXTex
+	url = https://github.com/microsoft/DirectXTex.git
