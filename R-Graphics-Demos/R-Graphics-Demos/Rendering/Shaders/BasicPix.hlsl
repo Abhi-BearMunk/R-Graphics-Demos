@@ -18,7 +18,7 @@ struct Pixel
 Texture2D txDiffuse : register(t0);
 SamplerState samLinear : register(s0);
 
-Pixel main(PixelIn input) : SV_TARGET
+Pixel main(PixelIn input)
 {
     //return float4(col, 1);
     Pixel Out;

@@ -21,8 +21,7 @@ namespace R
 			void Render();
 			inline RenderContext* GetRenderContext() { return &m_renderContext; }
 		private:
-
-			void CommandUploadResourcesToGPU(const ResourceData* resourceData);
+			void CommandUploadResourcesToGPU(const ResourceData* resourceData, ID3D12Resource*** intermediateBuffers, std::uint32_t& numBuffers);
 			static void TextureUploadJobFunc(void* param, std::uint32_t tid);
 			void CloseAndExecuteThreadCommandLists();
 
@@ -31,7 +30,7 @@ namespace R
 			{
 				RenderContext* renderContext;
 				const ResourceData* resourceData;
-				ComPtr<ID3D12Resource>* textureUploaders;
+				ID3D12Resource** textureUploaders;
 			};
 
 			struct ResourceUploadJobData

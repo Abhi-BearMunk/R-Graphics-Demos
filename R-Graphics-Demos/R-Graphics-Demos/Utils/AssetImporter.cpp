@@ -9,7 +9,7 @@ R::Utils::AssetImporter::AssetImporter(Job::JobSystem& jobSystem)
 
 void R::Utils::AssetImporter::ImportTextures(std::uint32_t numAssets, TextureAssetDesc* pAssetDescs)
 {
-	TextureAssetDesc* current;
+	TextureAssetDesc* current = nullptr;
 	for (std::uint32_t i = 0; i < numAssets; i++)
 	{
 		ImportTexture(&pAssetDescs[i]);
@@ -19,5 +19,7 @@ void R::Utils::AssetImporter::ImportTextures(std::uint32_t numAssets, TextureAss
 void R::Utils::AssetImporter::ImportTexture(TextureAssetDesc* assetDesc)
 {
 	m_resourceData.textureDatas.emplace_back(assetDesc->texId);
-	R::Rendering::LogErrorIfFailed(LoadFromWICFile(assetDesc->fileName, WIC_FLAGS_NONE, nullptr, m_resourceData.textureDatas.back().scratchImage), "Failed to load texture");
+	ScratchImage scratcImageBase;
+	R::Rendering::LogErrorIfFailed(LoadFromWICFile(assetDesc->fileName, WIC_FLAGS_NONE, nullptr, scratcImageBase), "Failed to load texture");
+	R::Rendering::LogErrorIfFailed(GenerateMipMaps(scratcImageBase.GetImages()[0], TEX_FILTER_FANT, 4, m_resourceData.textureDatas.back().scratchImage), "Failed to generate mipmaps");
 }

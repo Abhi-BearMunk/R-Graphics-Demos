@@ -94,7 +94,7 @@ void R::Rendering::BasePass::SetupRSAndPSO()
     //rootParameters[3].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
 
     D3D12_STATIC_SAMPLER_DESC samplerDesc = {};
-    samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
+    samplerDesc.Filter = D3D12_FILTER_ANISOTROPIC;
     samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
     samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
     samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;

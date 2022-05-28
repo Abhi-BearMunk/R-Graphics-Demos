@@ -204,8 +204,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
             R_DEBUG_TIMER(TotalUpdateTimer);
             {
                 R_DEBUG_TIMER(MoveTimer);
-                mv->Update(0.16f);
-                mv->WaitForCompletion();
+                //mv->Update(0.16f);
+                //mv->WaitForCompletion();
             }
             {
                 R_DEBUG_TIMER(RenderTimer);

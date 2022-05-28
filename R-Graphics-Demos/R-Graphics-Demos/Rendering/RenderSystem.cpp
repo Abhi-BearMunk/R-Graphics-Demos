@@ -21,6 +21,8 @@ R::Rendering::RenderSystem::RenderSystem(const std::uint32_t width, const std::u
 	ID3D12CommandList* ppCommandLists[] = { temp.GetCommandList() };
 	m_renderContext.GetCommandQueue()->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
+	ID3D12Resource** intermediateBuffers = nullptr;
+	std::uint32_t intermediateBuffersCount = 0;
 	// Create and start resource upload
 	if (externalResources)
 	{
@@ -28,10 +30,21 @@ R::Rendering::RenderSystem::RenderSystem(const std::uint32_t width, const std::u
 		{
 			m_renderContext.GetThreadContext(i)->Reset(0);
 		}
-		CommandUploadResourcesToGPU(externalResources);
+		CommandUploadResourcesToGPU(externalResources, &intermediateBuffers, intermediateBuffersCount);
 	}
 	// Wait for GPU to finish work
 	m_renderContext.WaitForGPU();
+
+	// Release the intermediate resources
+	if (intermediateBuffersCount > 0)
+	{
+		for (std::uint32_t i = 0; i < intermediateBuffersCount; i++)
+		{
+			intermediateBuffers[i]->Release();
+			intermediateBuffers[i] = nullptr;
+		}
+		delete[] intermediateBuffers;
+	}
 }
 
 R::Rendering::RenderSystem::~RenderSystem()
@@ -97,25 +110,26 @@ void R::Rendering::RenderSystem::Render()
 	m_renderContext.GetCurrentFrameResource()->Submit(m_renderContext.GetCommandQueue(), m_renderContext.GetFence(), m_renderContext.GetFrameNumber());
 }
 
-void R::Rendering::RenderSystem::CommandUploadResourcesToGPU(const ResourceData* resourceData)
+void R::Rendering::RenderSystem::CommandUploadResourcesToGPU(const ResourceData* resourceData, ID3D12Resource*** intermediateBuffers, std::uint32_t& numBuffers)
 {
-	std::uint32_t numTextures = resourceData->textureDatas.size();
+	std::uint32_t numTextures = static_cast<std::uint32_t>(resourceData->textureDatas.size());
 
 	// TODO: This should be elsewhere
 	m_renderContext.CreateCbvSrvUavHeap(numTextures);
-	ComPtr<ID3D12Resource>* textureUploaders = new ComPtr<ID3D12Resource>[numTextures];
+	*intermediateBuffers = new ID3D12Resource*[numTextures];
+	numBuffers = numTextures;
 
 	std::uint32_t updateBatchSize = std::max(10u, numTextures / 64);
 	std::uint32_t numTextureJobs = static_cast<std::uint32_t>(ceil(numTextures / static_cast<float>(updateBatchSize)));
 	// Setup jobn params
-	ResourceUploadJobConstData constData{ &m_renderContext, resourceData, textureUploaders };
+	ResourceUploadJobConstData constData{ &m_renderContext, resourceData, *intermediateBuffers };
 	ResourceUploadJobData* textureJobDatas = new ResourceUploadJobData[numTextureJobs];
 	Job::JobSystem::JobDesc* textureJobDescs = new Job::JobSystem::JobDesc[numTextureJobs];
 
 	Job::JobSystem::JobCounter jobCounter;
 	jobCounter.counter = numTextureJobs;
 
-	for (int i = 0; i < numTextureJobs; i++)
+	for (std::uint32_t i = 0; i < numTextureJobs; i++)
 	{
 		textureJobDescs[i].jobFunc = &TextureUploadJobFunc;
 		textureJobDescs[i].param = &textureJobDatas[i];
@@ -155,8 +169,8 @@ void R::Rendering::RenderSystem::TextureUploadJobFunc(void* param, std::uint32_t
 		CD3DX12_RESOURCE_DESC texDesc(
 			D3D12_RESOURCE_DIMENSION_TEXTURE2D,
 			0,
-			metaData.width,
-			metaData.height,
+			static_cast<UINT64>(metaData.width),
+			static_cast<UINT>(metaData.height),
 			1,
 			static_cast<UINT16>(metaData.mipLevels),
 			metaData.format,
@@ -190,8 +204,8 @@ void R::Rendering::RenderSystem::TextureUploadJobFunc(void* param, std::uint32_t
 		}
 
 		{
-			ID3D12Resource** intermediateResource = textureUploader[textureIndex].GetAddressOf();
-			UINT64 requiredSize = GetRequiredIntermediateSize(*textureResource, 0, subresources.size());
+			ID3D12Resource** intermediateResource = &textureUploader[textureIndex];
+			UINT64 requiredSize = GetRequiredIntermediateSize(*textureResource, 0, static_cast<UINT>(subresources.size()));
 
 			CD3DX12_HEAP_PROPERTIES uploadHeapDesc{ D3D12_HEAP_TYPE_UPLOAD };
 			auto bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(requiredSize);
@@ -207,7 +221,7 @@ void R::Rendering::RenderSystem::TextureUploadJobFunc(void* param, std::uint32_t
 
 			// Copy data to the intermediate upload heap and then schedule a copy
 			// from the upload heap to the Texture2D.
-			UpdateSubresources(commandList, *textureResource, *intermediateResource, 0, 0, subresources.size(), subresources.data());
+			UpdateSubresources(commandList, *textureResource, *intermediateResource, 0, 0, static_cast<UINT>(subresources.size()), subresources.data());
 			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(*textureResource, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 			commandList->ResourceBarrier(1, &barrier);
 		}
@@ -217,7 +231,7 @@ void R::Rendering::RenderSystem::TextureUploadJobFunc(void* param, std::uint32_t
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Format = metaData.format;
-		srvDesc.Texture2D.MipLevels = metaData.mipLevels;
+		srvDesc.Texture2D.MipLevels = static_cast<UINT>(metaData.mipLevels);
 		srvDesc.Texture2D.MostDetailedMip = 0;
 		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 		device->CreateShaderResourceView(*textureResource, &srvDesc, srvHandle);
