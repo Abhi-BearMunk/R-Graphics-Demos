@@ -12,7 +12,7 @@
 struct Health
 {
     int hp;
-    static const std::uint64_t uid = 1 << 4;
+    static const std::uint64_t uid = 4;
 };
 R::Test::MoveSystem* mv;
 R::Rendering::RenderSystem* rs;
@@ -27,14 +27,15 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
     // TODO: Place code here.
     R::ECS::World world;
     R::Utils::Logger logger;
-    world.RegisterArchetype<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity>();
-    world.RegisterArchetype<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity, Health>();
-    auto e1 = world.CreateEntity<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity, Health>({ 0.0f, 0.0f, 10.0f }, R::ECS::Rotation(0.f, 0.f, 0.f), {1.f, 1.f, 1.f}, { 2.f, 0.0f, 0.0f }, { 100 });
-    auto e2 = world.CreateEntity<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity>({ -0.20f, 0.0f, 5.0f }, R::ECS::Rotation(-60.f, 0.f, 0.f), {1.f, 4.f, 7.f }, { -0.02f, 0.0f, 0.0f });
-    auto e3 = world.CreateEntity<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity, Health>({ 2.10f, -0.10f, 10.0f }, R::ECS::Rotation(45.f, 0.f, 45.f), { 3.f, 2.f, 1.f }, { 0.0f, 0.0f, 0.0f }, { 50 });
-    auto e4 = world.CreateEntity<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity, Health>({ 0.643f, -0.67f, 20.0f }, R::ECS::Rotation(0.f, -750.f, 0.f), { 0.1f, 0.1f, 0.1f }, { -0.03f, 0.0f, 0.0f }, { 75 });
-    auto e5 = world.CreateEntity<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity>({ 0.1f, 0.10f, 40.0f }, R::ECS::Rotation(0.f, 0.f, 30.f), { 4.f, 4.f, 4.f }, { 0.10f, 0.0f, 0.0f });
-    std::uint32_t count = 25000;
+    world.RegisterArchetype<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity, R::Rendering::Mesh>();
+    world.RegisterArchetype<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity, R::Rendering::Mesh, Health>();
+    auto e1 = world.CreateEntity<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity, R::Rendering::Mesh, Health>({ 0.0f, 0.0f, 10.0f }, R::ECS::Rotation(0.f, 0.f, 0.f), { 1.f, 1.f, 1.f }, { 2.f, 0.0f, 0.0f }, {}, { 100 });
+    auto e2 = world.CreateEntity<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity, R::Rendering::Mesh>({ -0.20f, 0.0f, 5.0f }, R::ECS::Rotation(-60.f, 0.f, 0.f), {1.f, 4.f, 7.f }, { -0.02f, 0.0f, 0.0f }, {});
+    auto e3 = world.CreateEntity<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity, R::Rendering::Mesh, Health>({ 2.10f, -0.10f, 10.0f }, R::ECS::Rotation(45.f, 0.f, 45.f), { 3.f, 2.f, 1.f }, { 0.0f, 0.0f, 0.0f }, {}, { 50 });
+    auto e4 = world.CreateEntity<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity, R::Rendering::Mesh, Health>({ 0.643f, -0.67f, 20.0f }, R::ECS::Rotation(0.f, -750.f, 0.f), { 0.1f, 0.1f, 0.1f }, { -0.03f, 0.0f, 0.0f }, {}, { 75 });
+    auto e5 = world.CreateEntity<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity, R::Rendering::Mesh>({ 0.1f, 0.10f, 40.0f }, R::ECS::Rotation(0.f, 0.f, 30.f), { 4.f, 4.f, 4.f }, { 0.10f, 0.0f, 0.0f }, {});
+    const std::uint32_t count = 25000;
+    R::ECS::Entity entities[count];
     for (std::uint32_t i = 0; i < count; i++)
     {
         R::ECS::Pos p;
@@ -52,11 +53,11 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
         v.z = (float)(rand() % 10) / 20.0f - 0.25f;
         if (i < count / 2)
         {
-            world.CreateEntity<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity, Health>(p, r, s, v, { 100 });
+            entities[i] = world.CreateEntity<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity, R::Rendering::Mesh, Health>(p, r, s, v, {}, { 100 });
         }
         else
         {
-            world.CreateEntity<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity>(p, r, s, v);
+            entities[i] = world.CreateEntity<R::ECS::Pos, R::ECS::Rotation, R::ECS::Scale, R::Test::Velocity, R::Rendering::Mesh>(p, r, s, v, {});
         }
     }
 
@@ -69,10 +70,13 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
     mv = &moveSys;
 
     R::Utils::AssetImporter assetImporter(jobSys);
-    R::Rendering::TextureID testTex;
-    R::Utils::TextureAssetDesc testDesc{ R::Utils::TextureAssetDesc::E_Albedo, L"D:\\Work\\Github\\R-Graphics-Demos\\R-Graphics-Demos\\R-Graphics-Demos\\Assets\\Textures\\space-crate1-albedo.png", 1, &testTex };
-    R::Utils::TextureAssetDesc assets[] = { testDesc };
-    assetImporter.ImportTextures(1, assets);
+    R::Rendering::TextureID crateTex, waffleTex, weaveTex, dragonTex;
+    R::Utils::TextureAssetDesc assets[] = { 
+        { R::Utils::TextureAssetDesc::E_Albedo, L"Assets\\Textures\\space-crate1-bl\\space-crate1-albedo.png", 6, &crateTex },
+        { R::Utils::TextureAssetDesc::E_Albedo, L"Assets\\Textures\\waffled-chipped-metal-bl\\waffled-chipped-metal_albedo.png", 6, &waffleTex },
+        { R::Utils::TextureAssetDesc::E_Albedo, L"Assets\\Textures\\dirty-wicker-weave1-bl\\dirty-wicker-weave1-albedo.png", 6, &weaveTex },
+        { R::Utils::TextureAssetDesc::E_Albedo, L"Assets\\Textures\\dragon-scales-bl\\dragon-scales_albedo.png", 6, &dragonTex } };
+    assetImporter.ImportTextures(4, assets);
 
     // Initialize the window class.
     WNDCLASSEX windowClass = { 0 };
@@ -112,6 +116,16 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
 
     R::Rendering::RenderableManager rendMan(world, jobSys);
     rm = &rendMan;
+
+    world.GetComponent<R::Rendering::Mesh>(e1).textureIdStart = crateTex.Get();
+    world.GetComponent<R::Rendering::Mesh>(e2).textureIdStart = weaveTex.Get();
+    world.GetComponent<R::Rendering::Mesh>(e3).textureIdStart = waffleTex.Get();
+    world.GetComponent<R::Rendering::Mesh>(e4).textureIdStart = dragonTex.Get();
+    world.GetComponent<R::Rendering::Mesh>(e5).textureIdStart = waffleTex.Get();
+    for (std::uint32_t i = 0; i < count; i++)
+    {
+        world.GetComponent<R::Rendering::Mesh>(entities[i]).textureIdStart = (i < count / 4) ? crateTex.Get() : (i < count / 2) ? waffleTex.Get() : (i < 3 * count / 4) ? weaveTex.Get() : dragonTex.Get();
+    }
 
     XMStoreFloat4(&RQuat, XMQuaternionRotationAxis(XMLoadFloat3(&UP), 2.f * XM_PI / 180.f));
     XMStoreFloat4(&LQuat, XMQuaternionRotationAxis(XMLoadFloat3(&UP), -2.f * XM_PI / 180.f));
@@ -204,8 +218,8 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
             R_DEBUG_TIMER(TotalUpdateTimer);
             {
                 R_DEBUG_TIMER(MoveTimer);
-                //mv->Update(0.16f);
-                //mv->WaitForCompletion();
+                mv->Update(0.16f);
+                mv->WaitForCompletion();
             }
             {
                 R_DEBUG_TIMER(RenderTimer);

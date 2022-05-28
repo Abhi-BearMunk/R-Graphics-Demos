@@ -21,5 +21,5 @@ void R::Utils::AssetImporter::ImportTexture(TextureAssetDesc* assetDesc)
 	m_resourceData.textureDatas.emplace_back(assetDesc->texId);
 	ScratchImage scratcImageBase;
 	R::Rendering::LogErrorIfFailed(LoadFromWICFile(assetDesc->fileName, WIC_FLAGS_NONE, nullptr, scratcImageBase), "Failed to load texture");
-	R::Rendering::LogErrorIfFailed(GenerateMipMaps(scratcImageBase.GetImages()[0], TEX_FILTER_FANT, 4, m_resourceData.textureDatas.back().scratchImage), "Failed to generate mipmaps");
+	R::Rendering::LogErrorIfFailed(GenerateMipMaps(scratcImageBase.GetImages()[0], TEX_FILTER_FANT, assetDesc->numMips, m_resourceData.textureDatas.back().scratchImage), "Failed to generate mipmaps");
 }

@@ -8,7 +8,7 @@ namespace R
 			float x;
 			float y;
 			float z;
-			static const std::uint64_t uid = 1Ui64 << 63;
+			static const std::uint64_t uid = 63;
 		};
 	}
 }

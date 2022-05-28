@@ -4,7 +4,7 @@
 R::Rendering::RenderableManager::RenderableManager(ECS::World& world, Job::JobSystem& jobSystem)
 	:m_pJobSystem(&jobSystem)
 {
-	world.InterestedIn<ECS::Pos, ECS::Rotation, ECS::Scale>(m_entities);
+	world.InterestedIn<ECS::Pos, ECS::Rotation, ECS::Scale, Mesh>(m_entities);
 	for (int i = 0; i < ECS::MAX_ENTITIES_PER_ARCHETYPE; i++)
 	{
 		m_updateJobDescs[i].jobFunc = &RenderableManager::UpdateJobFunc;
@@ -53,6 +53,7 @@ void R::Rendering::RenderableManager::Update(RenderContext* renderContext)
 			m_updateJobDatas[count].pos = &reinterpret_cast<ECS::Pos*>(m_entities[i].ppComps[0])[j];
 			m_updateJobDatas[count].rot = &reinterpret_cast<ECS::Rotation*>(m_entities[i].ppComps[1])[j];
 			m_updateJobDatas[count].scale = &reinterpret_cast<ECS::Scale*>(m_entities[i].ppComps[2])[j];
+			m_updateJobDatas[count].mesh = &reinterpret_cast<Mesh*>(m_entities[i].ppComps[3])[j];
 			m_updateJobDatas[count].startIndex = startIndex;
 			m_updateJobDatas[count].batchSize = std::min(updateBatchSize, m_entities[i].entityCount - j);
 			//JobFunc(&datas[count]);
@@ -95,5 +96,6 @@ void R::Rendering::RenderableManager::UpdateJobFunc(void* param, std::uint32_t t
 		translation = XMLoadFloat3(&data->pos[k]);
 		model = XMMatrixAffineTransformation(scale, XMVectorZero(), rotation, translation);
 		XMStoreFloat4x4(&renderable->matrix, XMMatrixTranspose(XMMatrixMultiply(model, vp)));
+		renderable->textureID = data->mesh[k].textureIdStart;
 	}
 }

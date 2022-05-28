@@ -4,7 +4,7 @@ namespace R
 {
 	namespace ECS
 	{
-		constexpr std::uint32_t MAX_ENTITIES_PER_ARCHETYPE = 1 << 24; // A little over 15 million
+		constexpr std::uint32_t MAX_ENTITIES_PER_ARCHETYPE = 1 << 20;
 		constexpr std::uint32_t MAX_COMPONENTS = 64;
 
 		struct Entity
@@ -86,7 +86,7 @@ namespace R
 			template<typename Component>
 			Component& GetComponent(const Entity& e)
 			{
-				assert((e.signature & Component::uid) != 0);
+				assert((e.signature & (1Ui64 << Component::uid)) != 0 && "Entity does not have given component");
 				return reinterpret_cast<Component*>(m_componentArrays[Component::uid][e.signature].ptr)[e.index];
 			}
 
@@ -128,7 +128,7 @@ namespace R
 			template<typename T>
 			void GenerateSignatureHelper(std::uint64_t& signature)
 			{
-				signature |= T::uid;
+				signature |= (1Ui64 << T::uid);
 			}
 
 			template<typename T>

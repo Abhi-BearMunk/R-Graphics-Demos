@@ -89,7 +89,7 @@ namespace R
 			std::condition_variable				m_wakeSleepingThread;
 			std::vector<std::thread>			m_threadPool; // TODO : Change to windows threads to be able to set affinity
 #ifdef _DEBUG
-			std::vector<std::uint32_t>				m_threadJobs;
+			std::vector<std::uint32_t>			m_threadJobs;
 #endif // _DEBUG
 			std::atomic<bool>					m_stopRunning = false;
 			void ProcessJobs(std::uint32_t tid);

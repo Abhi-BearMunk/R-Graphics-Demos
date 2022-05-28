@@ -101,7 +101,7 @@ void R::Rendering::BasePass::SetupRSAndPSO()
     samplerDesc.MaxAnisotropy = 16;
     samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
     samplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
-    samplerDesc.MinLOD = 0;
+    samplerDesc.MinLOD = 2;
     samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
     samplerDesc.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
@@ -121,38 +121,6 @@ void R::Rendering::BasePass::SetupRSAndPSO()
     }
     LogErrorIfFailed(renderContext->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&m_rootSignature)));
     NAME_D3D12_COMPTR(m_rootSignature);
-
-    //CD3DX12_DESCRIPTOR_RANGE descRange[2];
-
-    //descRange[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0); // t0
-    //descRange[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0); // s0
-
-    //CD3DX12_ROOT_PARAMETER rp[4];
-    //rp[0].InitAsConstants(SIZE_OF_32(Renderable), 0); // b0
-    //rp[1].InitAsConstants(SIZE_OF_32(XMFLOAT3), 1); // b1
-
-    //CD3DX12_ROOT_SIGNATURE_DESC rs(_countof(rp), rp);
-
-    //rs.Init(2, rp, 0, nullptr,
-    //    D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
-    //    | D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS
-    //    | D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS
-    //    | D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS);
-
-    //ComPtr<ID3DBlob> signature;
-    //ComPtr<ID3DBlob> error;
-    //HRESULT hr = D3D12SerializeRootSignature(&rs, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
-    //if (FAILED(hr))
-    //{
-    //    R_LOG_ERROR("Failed to initialize root signature for Draw Triange Pass");
-    //    if (error)
-    //    {
-    //        R_LOG_ERROR(reinterpret_cast<const char*>(error->GetBufferPointer()));
-    //    }
-    //}
-
-    //LogErrorIfFailed(renderContext->GetDevice()->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
-    //        IID_PPV_ARGS(m_rootSignature.ReleaseAndGetAddressOf())));
 
     // PSO
     auto vertexShaderBlob = R::Utils::ReadData(L"BasicVert.cso");
@@ -262,9 +230,9 @@ void R::Rendering::BasePass::JobFunc(void* param, std::uint32_t tid)
     for (std::uint32_t k = 0; k < data->batchSize; k++)
     {
         renderable = frameResource->GetRenderable(data->startIndex + k);
-        commandList->SetGraphicsRoot32BitConstants(0, SIZE_OF_32(Renderable), renderable, 0);
+        commandList->SetGraphicsRoot32BitConstants(0, SIZE_OF_32(Renderable::matrix), &renderable->matrix, 0);
         commandList->SetGraphicsRoot32BitConstants(1, SIZE_OF_32(XMFLOAT3), &colors[(data->startIndex + k) % 8], 0);
-        commandList->SetGraphicsRootDescriptorTable(2, renderContext->GetExternalSRVGPUHandle(0));
+        commandList->SetGraphicsRootDescriptorTable(2, renderContext->GetExternalSRVGPUHandle(renderable->textureID));
         commandList->DrawIndexedInstanced(36, 1, 0, 0, 0);
     }
 }

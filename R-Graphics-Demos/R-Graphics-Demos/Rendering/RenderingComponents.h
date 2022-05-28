@@ -1,6 +1,6 @@
 #pragma once
 #include "pch.h"
-// UID -> 1 << 16 to 1 << 31
+// UID -> 16 to 31
 namespace R
 {
 	namespace Rendering
@@ -8,10 +8,8 @@ namespace R
 		struct Mesh
 		{
 			uint32_t meshId;
-			uint32_t albedoTextureId;
-			uint32_t normalTextureId;
-			uint32_t specularTextureId;
-			static const std::uint64_t uid = 1 << 16;
+			uint32_t textureIdStart;
+			static const std::uint64_t uid = 16;
 		};
 	}
 }

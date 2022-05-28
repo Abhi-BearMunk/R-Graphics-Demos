@@ -7,6 +7,7 @@ namespace R
 		struct Renderable
 		{
 			XMFLOAT4X4 matrix;
+			std::uint32_t textureID;
 		};
 	}
 }
